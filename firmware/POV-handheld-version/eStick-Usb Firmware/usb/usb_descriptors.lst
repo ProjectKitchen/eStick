@@ -1,0 +1,184 @@
+   1               		.file	"usb_descriptors.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               	.global	usb_hid_report_descriptor
+  11               		.section	.progmem.data,"a",@progbits
+  14               	usb_hid_report_descriptor:
+  15 0000 06        		.byte	6
+  16 0001 FF        		.byte	-1
+  17 0002 FF        		.byte	-1
+  18 0003 09        		.byte	9
+  19 0004 01        		.byte	1
+  20 0005 A1        		.byte	-95
+  21 0006 01        		.byte	1
+  22 0007 09        		.byte	9
+  23 0008 02        		.byte	2
+  24 0009 09        		.byte	9
+  25 000a 03        		.byte	3
+  26 000b 15        		.byte	21
+  27 000c 00        		.byte	0
+  28 000d 26        		.byte	38
+  29 000e FF        		.byte	-1
+  30 000f 00        		.byte	0
+  31 0010 75        		.byte	117
+  32 0011 08        		.byte	8
+  33 0012 95        		.byte	-107
+  34 0013 08        		.byte	8
+  35 0014 81        		.byte	-127
+  36 0015 02        		.byte	2
+  37 0016 09        		.byte	9
+  38 0017 04        		.byte	4
+  39 0018 09        		.byte	9
+  40 0019 05        		.byte	5
+  41 001a 15        		.byte	21
+  42 001b 00        		.byte	0
+  43 001c 26        		.byte	38
+  44 001d FF        		.byte	-1
+  45 001e 00        		.byte	0
+  46 001f 75        		.byte	117
+  47 0020 08        		.byte	8
+  48 0021 95        		.byte	-107
+  49 0022 08        		.byte	8
+  50 0023 91        		.byte	-111
+  51 0024 02        		.byte	2
+  52 0025 09        		.byte	9
+  53 0026 06        		.byte	6
+  54 0027 09        		.byte	9
+  55 0028 07        		.byte	7
+  56 0029 15        		.byte	21
+  57 002a 00        		.byte	0
+  58 002b 26        		.byte	38
+  59 002c FF        		.byte	-1
+  60 002d 00        		.byte	0
+  61 002e 75        		.byte	117
+  62 002f 08        		.byte	8
+  63 0030 95        		.byte	-107
+  64 0031 04        		.byte	4
+  65 0032 B1        		.byte	-79
+  66 0033 02        		.byte	2
+  67 0034 C0        		.byte	-64
+  68               	.global	usb_user_language_id
+  71               	usb_user_language_id:
+  72 0035 04        		.byte	4
+  73 0036 03        		.byte	3
+  74 0037 0904      		.word	1033
+  75               	.global	usb_user_serial_number
+  78               	usb_user_serial_number:
+  79 0039 0C        		.byte	12
+  80 003a 03        		.byte	3
+  81 003b 3100      		.word	49
+  82 003d 2E00      		.word	46
+  83 003f 3000      		.word	48
+  84 0041 2E00      		.word	46
+  85 0043 3000      		.word	48
+  86               	.global	usb_user_product_string_descriptor
+  89               	usb_user_product_string_descriptor:
+  90 0045 22        		.byte	34
+  91 0046 03        		.byte	3
+  92 0047 4100      		.word	65
+  93 0049 5600      		.word	86
+  94 004b 5200      		.word	82
+  95 004d 2000      		.word	32
+  96 004f 5500      		.word	85
+  97 0051 5300      		.word	83
+  98 0053 4200      		.word	66
+  99 0055 2000      		.word	32
+ 100 0057 4800      		.word	72
+ 101 0059 4900      		.word	73
+ 102 005b 4400      		.word	68
+ 103 005d 2000      		.word	32
+ 104 005f 4400      		.word	68
+ 105 0061 4500      		.word	69
+ 106 0063 4D00      		.word	77
+ 107 0065 4F00      		.word	79
+ 108               	.global	usb_user_manufacturer_string_descriptor
+ 111               	usb_user_manufacturer_string_descriptor:
+ 112 0067 0C        		.byte	12
+ 113 0068 03        		.byte	3
+ 114 0069 4100      		.word	65
+ 115 006b 5400      		.word	84
+ 116 006d 4D00      		.word	77
+ 117 006f 4500      		.word	69
+ 118 0071 4C00      		.word	76
+ 119               	.global	usb_conf_desc
+ 122               	usb_conf_desc:
+ 123 0073 09        		.byte	9
+ 124 0074 02        		.byte	2
+ 125 0075 2900      		.word	41
+ 126 0077 01        		.byte	1
+ 127 0078 01        		.byte	1
+ 128 0079 00        		.byte	0
+ 129 007a 80        		.byte	-128
+ 130 007b 32        		.byte	50
+ 131 007c 09        		.byte	9
+ 132 007d 04        		.byte	4
+ 133 007e 00        		.byte	0
+ 134 007f 00        		.byte	0
+ 135 0080 02        		.byte	2
+ 136 0081 03        		.byte	3
+ 137 0082 00        		.byte	0
+ 138 0083 00        		.byte	0
+ 139 0084 00        		.byte	0
+ 140 0085 09        		.byte	9
+ 141 0086 21        		.byte	33
+ 142 0087 1101      		.word	273
+ 143 0089 08        		.byte	8
+ 144 008a 01        		.byte	1
+ 145 008b 22        		.byte	34
+ 146 008c 3500      		.word	53
+ 147 008e 07        		.byte	7
+ 148 008f 05        		.byte	5
+ 149 0090 81        		.byte	-127
+ 150 0091 03        		.byte	3
+ 151 0092 0800      		.word	8
+ 152 0094 14        		.byte	20
+ 153 0095 07        		.byte	7
+ 154 0096 05        		.byte	5
+ 155 0097 02        		.byte	2
+ 156 0098 03        		.byte	3
+ 157 0099 0800      		.word	8
+ 158 009b 14        		.byte	20
+ 159               	.global	usb_dev_desc
+ 162               	usb_dev_desc:
+ 163 009c 12        		.byte	18
+ 164 009d 01        		.byte	1
+ 165 009e 0002      		.word	512
+ 166 00a0 00        		.byte	0
+ 167 00a1 00        		.byte	0
+ 168 00a2 00        		.byte	0
+ 169 00a3 20        		.byte	32
+ 170 00a4 EB03      		.word	1003
+ 171 00a6 1D20      		.word	8221
+ 172 00a8 0010      		.word	4096
+ 173 00aa 01        		.byte	1
+ 174 00ab 02        		.byte	2
+ 175 00ac 03        		.byte	3
+ 176 00ad 01        		.byte	1
+ 177               		.text
+ 178               	.Letext0:
+ 179               		.file 1 "./conf/compiler.h"
+ 180               		.file 2 "usb/usb_descriptors.h"
+ 181               		.file 3 "usb/usb_specific_request.h"
+ 182               		.file 4 "usb/usb_descriptors.c"
+DEFINED SYMBOLS
+                            *ABS*:00000000 usb_descriptors.c
+C:\Users\chris\AppData\Local\Temp\ccj8EwKs.s:2      *ABS*:0000003e __SP_H__
+C:\Users\chris\AppData\Local\Temp\ccj8EwKs.s:3      *ABS*:0000003d __SP_L__
+C:\Users\chris\AppData\Local\Temp\ccj8EwKs.s:4      *ABS*:0000003f __SREG__
+C:\Users\chris\AppData\Local\Temp\ccj8EwKs.s:5      *ABS*:00000000 __tmp_reg__
+C:\Users\chris\AppData\Local\Temp\ccj8EwKs.s:6      *ABS*:00000001 __zero_reg__
+C:\Users\chris\AppData\Local\Temp\ccj8EwKs.s:14     .progmem.data:00000000 usb_hid_report_descriptor
+C:\Users\chris\AppData\Local\Temp\ccj8EwKs.s:71     .progmem.data:00000035 usb_user_language_id
+C:\Users\chris\AppData\Local\Temp\ccj8EwKs.s:78     .progmem.data:00000039 usb_user_serial_number
+C:\Users\chris\AppData\Local\Temp\ccj8EwKs.s:89     .progmem.data:00000045 usb_user_product_string_descriptor
+C:\Users\chris\AppData\Local\Temp\ccj8EwKs.s:111    .progmem.data:00000067 usb_user_manufacturer_string_descriptor
+C:\Users\chris\AppData\Local\Temp\ccj8EwKs.s:122    .progmem.data:00000073 usb_conf_desc
+C:\Users\chris\AppData\Local\Temp\ccj8EwKs.s:162    .progmem.data:0000009c usb_dev_desc
+
+NO UNDEFINED SYMBOLS

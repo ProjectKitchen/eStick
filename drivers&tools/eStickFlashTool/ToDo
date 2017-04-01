@@ -1,0 +1,10 @@
+ToDo List Version 0.1
+---------------------
+* Add internationalization support.
+* Add autoconf / automake files for Linux.
+* Change help dialog to reflect and use the native help systems
+  on either MS Windows and Linux.
+* Rework the USB driver interface.
+* Add test and assertion statements.
+* Add / rework the hexfile parser.
+* Add *.spec file for *.rpm generation.

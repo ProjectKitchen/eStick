@@ -1,0 +1,498 @@
+   1               		.file	"usb_task.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               	.global	usb_task_init
+  12               	usb_task_init:
+  13               	.LFB3:
+  14               		.file 1 "usb/usb_task.c"
+   1:usb/usb_task.c ****  //!
+   2:usb/usb_task.c **** //! @file usb_task.c,v
+   3:usb/usb_task.c **** //!
+   4:usb/usb_task.c **** //! Copyright (c) 2006 Atmel.
+   5:usb/usb_task.c **** //!
+   6:usb/usb_task.c **** //! Please read file license.txt for copyright notice.
+   7:usb/usb_task.c **** //!
+   8:usb/usb_task.c **** //! @brief This file manages the USB task either device/host or both.
+   9:usb/usb_task.c **** //!
+  10:usb/usb_task.c **** //! The USB task selects the correct USB task (usb_device task or usb_host task
+  11:usb/usb_task.c **** //! to be executed depending on the current mode available.
+  12:usb/usb_task.c **** //!
+  13:usb/usb_task.c **** //! According to USB_DEVICE_FEATURE and USB_HOST_FEATURE value (located in conf_usb.h file)
+  14:usb/usb_task.c **** //! The usb_task can be configured to support USB DEVICE mode or USB Host mode or both
+  15:usb/usb_task.c **** //! for a dual role device application.
+  16:usb/usb_task.c **** //!
+  17:usb/usb_task.c **** //! This module also contains the general USB interrupt subroutine. This subroutine is used
+  18:usb/usb_task.c **** //! to detect asynchronous USB events.
+  19:usb/usb_task.c **** //!
+  20:usb/usb_task.c **** //! Note:
+  21:usb/usb_task.c **** //!   - The usb_task belongs to the scheduler, the usb_device_task and usb_host do not, they are ca
+  22:usb/usb_task.c **** //!     from the general usb_task
+  23:usb/usb_task.c **** //!   - See conf_usb.h file for more details about the configuration of this module
+  24:usb/usb_task.c **** //!
+  25:usb/usb_task.c **** //!
+  26:usb/usb_task.c **** //! @version 1.8 at90usb162-hidgen-1_0_1 $Id: usb_task.c,v 1.8 2007/06/13 12:58:51 arobert Exp $
+  27:usb/usb_task.c **** //!
+  28:usb/usb_task.c **** //! @todo
+  29:usb/usb_task.c **** //! @bug
+  30:usb/usb_task.c **** //!/
+  31:usb/usb_task.c **** 
+  32:usb/usb_task.c **** //_____  I N C L U D E S ___________________________________________________
+  33:usb/usb_task.c **** 
+  34:usb/usb_task.c **** #include "config.h"
+  35:usb/usb_task.c **** #include "conf_usb.h"
+  36:usb/usb_task.c **** #include "usb_task.h"
+  37:usb/usb_task.c **** #include "usb_drv.h"
+  38:usb/usb_task.c **** #if ((USB_DEVICE_FEATURE == ENABLED))
+  39:usb/usb_task.c **** #include "usb_descriptors.h"
+  40:usb/usb_task.c **** #endif
+  41:usb/usb_task.c **** #include "power_drv.h"
+  42:usb/usb_task.c **** #include "wdt_drv.h"
+  43:usb/usb_task.c **** #include "pll_drv.h"
+  44:usb/usb_task.c **** #include "usb_device_task.h"
+  45:usb/usb_task.c **** 
+  46:usb/usb_task.c **** #ifndef  USE_USB_PADS_REGULATOR
+  47:usb/usb_task.c ****    #error "USE_USB_PADS_REGULATOR" should be defined as ENABLE or DISABLE in conf_usb.h file
+  48:usb/usb_task.c **** #endif
+  49:usb/usb_task.c **** 
+  50:usb/usb_task.c **** //_____ M A C R O S ________________________________________________________
+  51:usb/usb_task.c **** 
+  52:usb/usb_task.c **** #ifndef LOG_STR_CODE
+  53:usb/usb_task.c **** #define LOG_STR_CODE(str)
+  54:usb/usb_task.c **** #else
+  55:usb/usb_task.c **** U8 code log_device_disconnect[]="Device Disconnected";
+  56:usb/usb_task.c **** U8 code log_id_change[]="Pin Id Change";
+  57:usb/usb_task.c **** #endif
+  58:usb/usb_task.c **** 
+  59:usb/usb_task.c **** //_____ D E F I N I T I O N S ______________________________________________
+  60:usb/usb_task.c **** 
+  61:usb/usb_task.c **** //!
+  62:usb/usb_task.c **** //! Public : U16 g_usb_event
+  63:usb/usb_task.c **** //! usb_connected is used to store USB events detected upon
+  64:usb/usb_task.c **** //! USB general interrupt subroutine
+  65:usb/usb_task.c **** //! Its value is managed by the following macros (See usb_task.h file)
+  66:usb/usb_task.c **** //! Usb_send_event(x)
+  67:usb/usb_task.c **** //! Usb_ack_event(x)
+  68:usb/usb_task.c **** //! Usb_clear_all_event()
+  69:usb/usb_task.c **** //! Is_usb_event(x)
+  70:usb/usb_task.c **** //! Is_not_usb_event(x)
+  71:usb/usb_task.c **** volatile U16 g_usb_event=0;
+  72:usb/usb_task.c **** 
+  73:usb/usb_task.c **** 
+  74:usb/usb_task.c **** #if (USB_DEVICE_FEATURE == ENABLED)
+  75:usb/usb_task.c **** //!
+  76:usb/usb_task.c **** //! Public : (bit) usb_connected
+  77:usb/usb_task.c **** //! usb_connected is set to TRUE when VBUS has been detected
+  78:usb/usb_task.c **** //! usb_connected is set to FALSE otherwise
+  79:usb/usb_task.c **** //! Used with USB_DEVICE_FEATURE == ENABLED only
+  80:usb/usb_task.c **** //!/
+  81:usb/usb_task.c **** extern bit   usb_connected;
+  82:usb/usb_task.c **** 
+  83:usb/usb_task.c **** //!
+  84:usb/usb_task.c **** //! Public : (U8) usb_configuration_nb
+  85:usb/usb_task.c **** //! Store the number of the USB configuration used by the USB device
+  86:usb/usb_task.c **** //! when its value is different from zero, it means the device mode is enumerated
+  87:usb/usb_task.c **** //! Used with USB_DEVICE_FEATURE == ENABLED only
+  88:usb/usb_task.c **** //!/
+  89:usb/usb_task.c **** extern U8    usb_configuration_nb;
+  90:usb/usb_task.c **** #endif
+  91:usb/usb_task.c **** 
+  92:usb/usb_task.c **** 
+  93:usb/usb_task.c **** #if (USB_HOST_FEATURE == ENABLED)
+  94:usb/usb_task.c **** //!
+  95:usb/usb_task.c **** //! Private : (U8) private_sof_counter
+  96:usb/usb_task.c **** //! Incremented  by host SOF interrupt subroutime
+  97:usb/usb_task.c **** //! This counter is used to detect timeout in host requests.
+  98:usb/usb_task.c **** //! It must not be modified by the user application tasks.
+  99:usb/usb_task.c **** //!/
+ 100:usb/usb_task.c **** volatile U8 private_sof_counter=0;
+ 101:usb/usb_task.c **** 
+ 102:usb/usb_task.c ****    #if (USB_HOST_PIPE_INTERRUPT_TRANSFER == ENABLE)
+ 103:usb/usb_task.c **** extern volatile S_pipe_int   it_pipe_str[MAX_EP_NB];
+ 104:usb/usb_task.c ****    #endif
+ 105:usb/usb_task.c **** 
+ 106:usb/usb_task.c **** #endif
+ 107:usb/usb_task.c **** 
+ 108:usb/usb_task.c **** #if ((USB_DEVICE_FEATURE == ENABLED)&& (USB_HOST_FEATURE == ENABLED))
+ 109:usb/usb_task.c **** //!
+ 110:usb/usb_task.c **** //! Public : (U8) g_usb_mode
+ 111:usb/usb_task.c **** //! Used in dual role application (both device/host) to store
+ 112:usb/usb_task.c **** //! the current mode the usb controller is operating
+ 113:usb/usb_task.c **** //!/
+ 114:usb/usb_task.c ****    U8 g_usb_mode=USB_MODE_UNDEFINED;
+ 115:usb/usb_task.c ****    U8 g_old_usb_mode;
+ 116:usb/usb_task.c **** #endif
+ 117:usb/usb_task.c **** 
+ 118:usb/usb_task.c **** //_____ D E C L A R A T I O N S ____________________________________________
+ 119:usb/usb_task.c **** 
+ 120:usb/usb_task.c **** /**
+ 121:usb/usb_task.c ****  * @brief This function initializes the USB process.
+ 122:usb/usb_task.c ****  *
+ 123:usb/usb_task.c ****  *  The function calls the coresponding usb mode initialization function
+ 124:usb/usb_task.c ****  *
+ 125:usb/usb_task.c ****  *  @param none
+ 126:usb/usb_task.c ****  *
+ 127:usb/usb_task.c ****  *  @return none
+ 128:usb/usb_task.c ****  */
+ 129:usb/usb_task.c **** void usb_task_init(void)
+ 130:usb/usb_task.c **** {
+  15               		.loc 1 130 0
+  16               		.cfi_startproc
+  17               	/* prologue: function */
+  18               	/* frame size = 0 */
+  19               	/* stack size = 0 */
+  20               	.L__stack_usage = 0
+ 131:usb/usb_task.c ****    #if (USE_USB_PADS_REGULATOR==ENABLE)  // Otherwise assume USB PADs regulator is not used
+ 132:usb/usb_task.c ****    Usb_enable_regulator();
+ 133:usb/usb_task.c ****    #endif
+ 134:usb/usb_task.c ****    usb_device_task_init();
+  21               		.loc 1 134 0
+  22 0000 0C94 0000 		jmp usb_device_task_init
+  23               	.LVL0:
+  24               		.cfi_endproc
+  25               	.LFE3:
+  27               	.global	usb_task
+  29               	usb_task:
+  30               	.LFB4:
+ 135:usb/usb_task.c **** #if (USB_REMOTE_WAKEUP == ENABLED)
+ 136:usb/usb_task.c ****    usb_remote_wup_feature = DISABLED;
+ 137:usb/usb_task.c **** #endif
+ 138:usb/usb_task.c **** }
+ 139:usb/usb_task.c **** 
+ 140:usb/usb_task.c **** /**
+ 141:usb/usb_task.c ****  *  @brief Entry point of the USB mamnagement
+ 142:usb/usb_task.c ****  *
+ 143:usb/usb_task.c ****  *  The function calls the coresponding usb management function.
+ 144:usb/usb_task.c ****  *
+ 145:usb/usb_task.c ****  *  @param none
+ 146:usb/usb_task.c ****  *
+ 147:usb/usb_task.c ****  *  @return none
+ 148:usb/usb_task.c **** */
+ 149:usb/usb_task.c **** void usb_task(void)
+ 150:usb/usb_task.c **** {
+  31               		.loc 1 150 0
+  32               		.cfi_startproc
+  33               	/* prologue: function */
+  34               	/* frame size = 0 */
+  35               	/* stack size = 0 */
+  36               	.L__stack_usage = 0
+ 151:usb/usb_task.c ****    usb_device_task();
+  37               		.loc 1 151 0
+  38 0004 0C94 0000 		jmp usb_device_task
+  39               	.LVL1:
+  40               		.cfi_endproc
+  41               	.LFE4:
+  43               	.global	__vector_11
+  45               	__vector_11:
+  46               	.LFB5:
+ 152:usb/usb_task.c **** }
+ 153:usb/usb_task.c **** 
+ 154:usb/usb_task.c **** //! @brief USB interrupt subroutine
+ 155:usb/usb_task.c **** //!
+ 156:usb/usb_task.c **** //! This function is called each time a USB interrupt occurs.
+ 157:usb/usb_task.c **** //! The following USB DEVICE events are taken in charge:
+ 158:usb/usb_task.c **** //! - Start Of Frame
+ 159:usb/usb_task.c **** //! - Suspend
+ 160:usb/usb_task.c **** //! - Wake-Up
+ 161:usb/usb_task.c **** //! - Resume
+ 162:usb/usb_task.c **** //! - Reset
+ 163:usb/usb_task.c **** //!
+ 164:usb/usb_task.c **** //! For each event, the user can launch an action by completing
+ 165:usb/usb_task.c **** //! the associate define (See conf_usb.h file to add action upon events)
+ 166:usb/usb_task.c **** //!
+ 167:usb/usb_task.c **** //! Note: Only interrupts events that are enabled are processed
+ 168:usb/usb_task.c **** //!
+ 169:usb/usb_task.c **** //! @param none
+ 170:usb/usb_task.c **** //!
+ 171:usb/usb_task.c **** //! @return none
+ 172:usb/usb_task.c **** #ifdef AVRGCC
+ 173:usb/usb_task.c ****  ISR(USB_GEN_vect)
+ 174:usb/usb_task.c **** #else
+ 175:usb/usb_task.c **** #pragma vector = USB_GENERAL_vect
+ 176:usb/usb_task.c **** __interrupt void usb_general_interrupt()
+ 177:usb/usb_task.c **** #endif
+ 178:usb/usb_task.c **** {
+  47               		.loc 1 178 0
+  48               		.cfi_startproc
+  49 0008 1F92      		push r1
+  50               	.LCFI0:
+  51               		.cfi_def_cfa_offset 3
+  52               		.cfi_offset 1, -2
+  53 000a 0F92      		push r0
+  54               	.LCFI1:
+  55               		.cfi_def_cfa_offset 4
+  56               		.cfi_offset 0, -3
+  57 000c 0FB6      		in r0,__SREG__
+  58 000e 0F92      		push r0
+  59 0010 1124      		clr __zero_reg__
+  60 0012 2F93      		push r18
+  61               	.LCFI2:
+  62               		.cfi_def_cfa_offset 5
+  63               		.cfi_offset 18, -4
+  64 0014 3F93      		push r19
+  65               	.LCFI3:
+  66               		.cfi_def_cfa_offset 6
+  67               		.cfi_offset 19, -5
+  68 0016 4F93      		push r20
+  69               	.LCFI4:
+  70               		.cfi_def_cfa_offset 7
+  71               		.cfi_offset 20, -6
+  72 0018 5F93      		push r21
+  73               	.LCFI5:
+  74               		.cfi_def_cfa_offset 8
+  75               		.cfi_offset 21, -7
+  76 001a 6F93      		push r22
+  77               	.LCFI6:
+  78               		.cfi_def_cfa_offset 9
+  79               		.cfi_offset 22, -8
+  80 001c 7F93      		push r23
+  81               	.LCFI7:
+  82               		.cfi_def_cfa_offset 10
+  83               		.cfi_offset 23, -9
+  84 001e 8F93      		push r24
+  85               	.LCFI8:
+  86               		.cfi_def_cfa_offset 11
+  87               		.cfi_offset 24, -10
+  88 0020 9F93      		push r25
+  89               	.LCFI9:
+  90               		.cfi_def_cfa_offset 12
+  91               		.cfi_offset 25, -11
+  92 0022 AF93      		push r26
+  93               	.LCFI10:
+  94               		.cfi_def_cfa_offset 13
+  95               		.cfi_offset 26, -12
+  96 0024 BF93      		push r27
+  97               	.LCFI11:
+  98               		.cfi_def_cfa_offset 14
+  99               		.cfi_offset 27, -13
+ 100 0026 EF93      		push r30
+ 101               	.LCFI12:
+ 102               		.cfi_def_cfa_offset 15
+ 103               		.cfi_offset 30, -14
+ 104 0028 FF93      		push r31
+ 105               	.LCFI13:
+ 106               		.cfi_def_cfa_offset 16
+ 107               		.cfi_offset 31, -15
+ 108               	/* prologue: Signal */
+ 109               	/* frame size = 0 */
+ 110               	/* stack size = 15 */
+ 111               	.L__stack_usage = 15
+ 179:usb/usb_task.c ****   // - Device start of frame received
+ 180:usb/usb_task.c ****    if (Is_usb_sof() && Is_sof_interrupt_enabled())
+ 112               		.loc 1 180 0
+ 113 002a 8091 E100 		lds r24,225
+ 114 002e 82FF      		sbrs r24,2
+ 115 0030 00C0      		rjmp .L4
+ 116               		.loc 1 180 0 is_stmt 0 discriminator 1
+ 117 0032 8091 E200 		lds r24,226
+ 118 0036 82FF      		sbrs r24,2
+ 119 0038 00C0      		rjmp .L4
+ 181:usb/usb_task.c ****    {
+ 182:usb/usb_task.c ****       Usb_ack_sof();
+ 120               		.loc 1 182 0 is_stmt 1
+ 121 003a 8BEF      		ldi r24,lo8(-5)
+ 122 003c 8093 E100 		sts 225,r24
+ 183:usb/usb_task.c ****       Usb_sof_action();
+ 123               		.loc 1 183 0
+ 124 0040 0E94 0000 		call sof_action
+ 125               	.LVL2:
+ 126               	.L4:
+ 184:usb/usb_task.c ****    }
+ 185:usb/usb_task.c ****   // - Device Suspend event (no more USB activity detected)
+ 186:usb/usb_task.c ****    if (Is_usb_suspend() && Is_suspend_interrupt_enabled())
+ 127               		.loc 1 186 0
+ 128 0044 8091 E100 		lds r24,225
+ 129 0048 80FF      		sbrs r24,0
+ 130 004a 00C0      		rjmp .L5
+ 131               		.loc 1 186 0 is_stmt 0 discriminator 1
+ 132 004c 8091 E200 		lds r24,226
+ 133 0050 80FF      		sbrs r24,0
+ 134 0052 00C0      		rjmp .L5
+ 187:usb/usb_task.c ****    {
+ 188:usb/usb_task.c ****       Usb_enable_wake_up_interrupt();
+ 135               		.loc 1 188 0 is_stmt 1
+ 136 0054 8091 E200 		lds r24,226
+ 137 0058 8061      		ori r24,lo8(16)
+ 138 005a 8093 E200 		sts 226,r24
+ 189:usb/usb_task.c ****       Usb_ack_wake_up();                 // clear wake up to detect next event
+ 139               		.loc 1 189 0
+ 140 005e 8FEE      		ldi r24,lo8(-17)
+ 141 0060 8093 E100 		sts 225,r24
+ 190:usb/usb_task.c ****       Usb_freeze_clock();
+ 142               		.loc 1 190 0
+ 143 0064 8091 D800 		lds r24,216
+ 144 0068 8062      		ori r24,lo8(32)
+ 145 006a 8093 D800 		sts 216,r24
+ 191:usb/usb_task.c ****       Usb_send_event(EVT_USB_SUSPEND);
+ 146               		.loc 1 191 0
+ 147 006e 8091 0000 		lds r24,g_usb_event
+ 148 0072 9091 0000 		lds r25,g_usb_event+1
+ 149 0076 8062      		ori r24,32
+ 150 0078 9093 0000 		sts g_usb_event+1,r25
+ 151 007c 8093 0000 		sts g_usb_event,r24
+ 192:usb/usb_task.c ****       Usb_suspend_action();
+ 193:usb/usb_task.c ****       Usb_ack_suspend();  // must be executed last (after Usb_suspend_action()) to allow upstream r
+ 152               		.loc 1 193 0
+ 153 0080 8EEF      		ldi r24,lo8(-2)
+ 154 0082 8093 E100 		sts 225,r24
+ 155               	.L5:
+ 194:usb/usb_task.c ****    }
+ 195:usb/usb_task.c ****   // - Wake up event (USB activity detected): Used to resume
+ 196:usb/usb_task.c ****    if (Is_usb_wake_up() && Is_swake_up_interrupt_enabled())
+ 156               		.loc 1 196 0
+ 157 0086 8091 E100 		lds r24,225
+ 158 008a 84FF      		sbrs r24,4
+ 159 008c 00C0      		rjmp .L6
+ 160               		.loc 1 196 0 is_stmt 0 discriminator 1
+ 161 008e 8091 E200 		lds r24,226
+ 162 0092 84FF      		sbrs r24,4
+ 163 0094 00C0      		rjmp .L6
+ 197:usb/usb_task.c ****    {
+ 198:usb/usb_task.c ****       Usb_unfreeze_clock();
+ 164               		.loc 1 198 0 is_stmt 1
+ 165 0096 8091 D800 		lds r24,216
+ 166 009a 8F7D      		andi r24,lo8(-33)
+ 167 009c 8093 D800 		sts 216,r24
+ 199:usb/usb_task.c ****       Usb_ack_wake_up();
+ 168               		.loc 1 199 0
+ 169 00a0 8FEE      		ldi r24,lo8(-17)
+ 170 00a2 8093 E100 		sts 225,r24
+ 200:usb/usb_task.c ****       Usb_disable_wake_up_interrupt();
+ 171               		.loc 1 200 0
+ 172 00a6 8091 E200 		lds r24,226
+ 173 00aa 8F7E      		andi r24,lo8(-17)
+ 174 00ac 8093 E200 		sts 226,r24
+ 201:usb/usb_task.c ****       Usb_wake_up_action();
+ 202:usb/usb_task.c ****       Usb_send_event(EVT_USB_WAKE_UP);
+ 175               		.loc 1 202 0
+ 176 00b0 8091 0000 		lds r24,g_usb_event
+ 177 00b4 9091 0000 		lds r25,g_usb_event+1
+ 178 00b8 8064      		ori r24,64
+ 179 00ba 9093 0000 		sts g_usb_event+1,r25
+ 180 00be 8093 0000 		sts g_usb_event,r24
+ 181               	.L6:
+ 203:usb/usb_task.c ****    }
+ 204:usb/usb_task.c ****   // - Resume state bus detection
+ 205:usb/usb_task.c ****    if (Is_usb_resume() && Is_resume_interrupt_enabled())
+ 182               		.loc 1 205 0
+ 183 00c2 8091 E100 		lds r24,225
+ 184 00c6 85FF      		sbrs r24,5
+ 185 00c8 00C0      		rjmp .L7
+ 186               		.loc 1 205 0 is_stmt 0 discriminator 1
+ 187 00ca 8091 E200 		lds r24,226
+ 188 00ce 85FF      		sbrs r24,5
+ 189 00d0 00C0      		rjmp .L7
+ 206:usb/usb_task.c ****    {
+ 207:usb/usb_task.c ****       Usb_disable_wake_up_interrupt();
+ 190               		.loc 1 207 0 is_stmt 1
+ 191 00d2 8091 E200 		lds r24,226
+ 192 00d6 8F7E      		andi r24,lo8(-17)
+ 193 00d8 8093 E200 		sts 226,r24
+ 208:usb/usb_task.c ****       Usb_ack_resume();
+ 194               		.loc 1 208 0
+ 195 00dc 8FED      		ldi r24,lo8(-33)
+ 196 00de 8093 E100 		sts 225,r24
+ 209:usb/usb_task.c ****       Usb_disable_resume_interrupt();
+ 197               		.loc 1 209 0
+ 198 00e2 8091 E200 		lds r24,226
+ 199 00e6 8F7D      		andi r24,lo8(-33)
+ 200 00e8 8093 E200 		sts 226,r24
+ 210:usb/usb_task.c ****       Usb_resume_action();
+ 211:usb/usb_task.c ****       Usb_send_event(EVT_USB_RESUME);
+ 201               		.loc 1 211 0
+ 202 00ec 8091 0000 		lds r24,g_usb_event
+ 203 00f0 9091 0000 		lds r25,g_usb_event+1
+ 204 00f4 8068      		ori r24,128
+ 205 00f6 9093 0000 		sts g_usb_event+1,r25
+ 206 00fa 8093 0000 		sts g_usb_event,r24
+ 207               	.L7:
+ 212:usb/usb_task.c ****    }
+ 213:usb/usb_task.c ****   // - USB bus reset detection
+ 214:usb/usb_task.c ****    if (Is_usb_reset()&& Is_reset_interrupt_enabled())
+ 208               		.loc 1 214 0
+ 209 00fe 8091 E100 		lds r24,225
+ 210 0102 83FF      		sbrs r24,3
+ 211 0104 00C0      		rjmp .L3
+ 212               		.loc 1 214 0 is_stmt 0 discriminator 1
+ 213 0106 8091 E200 		lds r24,226
+ 214 010a 83FF      		sbrs r24,3
+ 215 010c 00C0      		rjmp .L3
+ 215:usb/usb_task.c ****    {
+ 216:usb/usb_task.c ****       #if (USB_REMOTE_WAKEUP == ENABLED)
+ 217:usb/usb_task.c ****       usb_remote_wup_feature = DISABLED;
+ 218:usb/usb_task.c ****       #endif
+ 219:usb/usb_task.c ****       Usb_ack_reset();
+ 216               		.loc 1 219 0 is_stmt 1
+ 217 010e 87EF      		ldi r24,lo8(-9)
+ 218 0110 8093 E100 		sts 225,r24
+ 220:usb/usb_task.c ****       usb_init_device();
+ 219               		.loc 1 220 0
+ 220 0114 0E94 0000 		call usb_init_device
+ 221               	.LVL3:
+ 221:usb/usb_task.c ****       Usb_reset_action();
+ 222:usb/usb_task.c ****       Usb_send_event(EVT_USB_RESET);
+ 222               		.loc 1 222 0
+ 223 0118 8091 0000 		lds r24,g_usb_event
+ 224 011c 9091 0000 		lds r25,g_usb_event+1
+ 225 0120 9160      		ori r25,1
+ 226 0122 9093 0000 		sts g_usb_event+1,r25
+ 227 0126 8093 0000 		sts g_usb_event,r24
+ 228               	.L3:
+ 229               	/* epilogue start */
+ 223:usb/usb_task.c ****    }
+ 224:usb/usb_task.c **** 
+ 225:usb/usb_task.c **** }
+ 230               		.loc 1 225 0
+ 231 012a FF91      		pop r31
+ 232 012c EF91      		pop r30
+ 233 012e BF91      		pop r27
+ 234 0130 AF91      		pop r26
+ 235 0132 9F91      		pop r25
+ 236 0134 8F91      		pop r24
+ 237 0136 7F91      		pop r23
+ 238 0138 6F91      		pop r22
+ 239 013a 5F91      		pop r21
+ 240 013c 4F91      		pop r20
+ 241 013e 3F91      		pop r19
+ 242 0140 2F91      		pop r18
+ 243 0142 0F90      		pop r0
+ 244 0144 0FBE      		out __SREG__,r0
+ 245 0146 0F90      		pop r0
+ 246 0148 1F90      		pop r1
+ 247 014a 1895      		reti
+ 248               		.cfi_endproc
+ 249               	.LFE5:
+ 251               	.global	g_usb_event
+ 252               		.section .bss
+ 255               	g_usb_event:
+ 256 0000 0000      		.zero	2
+ 257               		.text
+ 258               	.Letext0:
+ 259               		.file 2 "./conf/compiler.h"
+ 260               		.file 3 "usb/usb_device_task.h"
+ 261               		.file 4 "./conf/conf_usb.h"
+ 262               		.file 5 "c:\\program files (x86)\\arduino\\hardware\\tools\\avr\\avr\\include\\stdint.h"
+ 263               		.file 6 "usb/usb_drv.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 usb_task.c
+C:\Users\chris\AppData\Local\Temp\cc2uQHFb.s:2      *ABS*:0000003e __SP_H__
+C:\Users\chris\AppData\Local\Temp\cc2uQHFb.s:3      *ABS*:0000003d __SP_L__
+C:\Users\chris\AppData\Local\Temp\cc2uQHFb.s:4      *ABS*:0000003f __SREG__
+C:\Users\chris\AppData\Local\Temp\cc2uQHFb.s:5      *ABS*:00000000 __tmp_reg__
+C:\Users\chris\AppData\Local\Temp\cc2uQHFb.s:6      *ABS*:00000001 __zero_reg__
+C:\Users\chris\AppData\Local\Temp\cc2uQHFb.s:12     .text:00000000 usb_task_init
+C:\Users\chris\AppData\Local\Temp\cc2uQHFb.s:29     .text:00000004 usb_task
+C:\Users\chris\AppData\Local\Temp\cc2uQHFb.s:45     .text:00000008 __vector_11
+C:\Users\chris\AppData\Local\Temp\cc2uQHFb.s:255    .bss:00000000 g_usb_event
+
+UNDEFINED SYMBOLS
+usb_device_task_init
+usb_device_task
+sof_action
+usb_init_device
+__do_clear_bss

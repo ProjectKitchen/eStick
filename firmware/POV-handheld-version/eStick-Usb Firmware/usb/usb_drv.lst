@@ -1,0 +1,427 @@
+   1               		.file	"usb_drv.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               	.global	usb_config_ep
+  12               	usb_config_ep:
+  13               	.LFB1:
+  14               		.file 1 "usb/usb_drv.c"
+   1:usb/usb_drv.c **** //! @file usb_drv.c,v
+   2:usb/usb_drv.c **** //!
+   3:usb/usb_drv.c **** //! Copyright (c) 2006 Atmel.
+   4:usb/usb_drv.c **** //!
+   5:usb/usb_drv.c **** //! Use of this program is subject to Atmel's End User License Agreement.
+   6:usb/usb_drv.c **** //! Please read file license.txt for copyright notice.
+   7:usb/usb_drv.c **** //!
+   8:usb/usb_drv.c **** //! @brief This file contains the USB driver routines.
+   9:usb/usb_drv.c **** //!
+  10:usb/usb_drv.c **** //! This file contains the USB driver routines.
+  11:usb/usb_drv.c **** //!
+  12:usb/usb_drv.c **** //! @version 1.4 at90usb162-hidgen-1_0_1 $Id: usb_drv.c,v 1.4 2006/09/06 12:59:42 rletendu Exp $
+  13:usb/usb_drv.c **** //!
+  14:usb/usb_drv.c **** //! @todo
+  15:usb/usb_drv.c **** //! @bug
+  16:usb/usb_drv.c **** 
+  17:usb/usb_drv.c **** //_____ I N C L U D E S ____________________________________________________
+  18:usb/usb_drv.c **** 
+  19:usb/usb_drv.c **** #include "config.h"
+  20:usb/usb_drv.c **** #include "conf_usb.h"
+  21:usb/usb_drv.c **** #include "usb_drv.h"
+  22:usb/usb_drv.c **** 
+  23:usb/usb_drv.c **** //_____ M A C R O S ________________________________________________________
+  24:usb/usb_drv.c **** 
+  25:usb/usb_drv.c **** //_____ D E C L A R A T I O N ______________________________________________
+  26:usb/usb_drv.c **** 
+  27:usb/usb_drv.c **** 
+  28:usb/usb_drv.c **** 
+  29:usb/usb_drv.c **** //! usb_configure_endpoint.
+  30:usb/usb_drv.c **** //!
+  31:usb/usb_drv.c **** //!  This function configures an endpoint with the selected type.
+  32:usb/usb_drv.c **** //!
+  33:usb/usb_drv.c **** //!
+  34:usb/usb_drv.c **** //! @param config0
+  35:usb/usb_drv.c **** //! @param config1
+  36:usb/usb_drv.c **** //!
+  37:usb/usb_drv.c **** //! @return Is_endpoint_configured.
+  38:usb/usb_drv.c **** //!
+  39:usb/usb_drv.c **** U8 usb_config_ep(U8 config0, U8 config1)
+  40:usb/usb_drv.c **** {
+  15               		.loc 1 40 0
+  16               		.cfi_startproc
+  17               	.LVL0:
+  18               	/* prologue: function */
+  19               	/* frame size = 0 */
+  20               	/* stack size = 0 */
+  21               	.L__stack_usage = 0
+  41:usb/usb_drv.c ****     Usb_enable_endpoint();
+  22               		.loc 1 41 0
+  23 0000 EBEE      		ldi r30,lo8(-21)
+  24 0002 F0E0      		ldi r31,0
+  25 0004 9081      		ld r25,Z
+  26 0006 9160      		ori r25,lo8(1)
+  27 0008 9083      		st Z,r25
+  42:usb/usb_drv.c ****     UECFG0X = config0;
+  28               		.loc 1 42 0
+  29 000a 8093 EC00 		sts 236,r24
+  43:usb/usb_drv.c ****     UECFG1X = (UECFG1X & (1<<ALLOC)) | config1;
+  30               		.loc 1 43 0
+  31 000e EDEE      		ldi r30,lo8(-19)
+  32 0010 F0E0      		ldi r31,0
+  33 0012 8081      		ld r24,Z
+  34               	.LVL1:
+  35 0014 8270      		andi r24,lo8(2)
+  36 0016 682B      		or r22,r24
+  37               	.LVL2:
+  38 0018 6083      		st Z,r22
+  39               	.LVL3:
+  44:usb/usb_drv.c ****     Usb_allocate_memory();
+  40               		.loc 1 44 0
+  41 001a 8081      		ld r24,Z
+  42 001c 8260      		ori r24,lo8(2)
+  43 001e 8083      		st Z,r24
+  45:usb/usb_drv.c ****     return (Is_endpoint_configured());
+  44               		.loc 1 45 0
+  45 0020 8091 EE00 		lds r24,238
+  46:usb/usb_drv.c **** }
+  46               		.loc 1 46 0
+  47 0024 881F      		rol r24
+  48 0026 8827      		clr r24
+  49 0028 881F      		rol r24
+  50 002a 0895      		ret
+  51               		.cfi_endproc
+  52               	.LFE1:
+  54               	.global	usb_select_enpoint_interrupt
+  56               	usb_select_enpoint_interrupt:
+  57               	.LFB2:
+  47:usb/usb_drv.c **** 
+  48:usb/usb_drv.c **** //! usb_select_endpoint_interrupt.
+  49:usb/usb_drv.c **** //!
+  50:usb/usb_drv.c **** //! This function select the endpoint where an event occurs and returns the
+  51:usb/usb_drv.c **** //! number of this endpoint. If no event occurs on the endpoints, this
+  52:usb/usb_drv.c **** //! function returns 0.
+  53:usb/usb_drv.c **** //!
+  54:usb/usb_drv.c **** //!
+  55:usb/usb_drv.c **** //! @param none
+  56:usb/usb_drv.c **** //!
+  57:usb/usb_drv.c **** //! @return endpoint number.
+  58:usb/usb_drv.c **** //!
+  59:usb/usb_drv.c **** U8 usb_select_enpoint_interrupt(void)
+  60:usb/usb_drv.c **** {
+  58               		.loc 1 60 0
+  59               		.cfi_startproc
+  60               	/* prologue: function */
+  61               	/* frame size = 0 */
+  62               	/* stack size = 0 */
+  63               	.L__stack_usage = 0
+  64               	.LVL4:
+  61:usb/usb_drv.c **** U8 interrupt_flags;
+  62:usb/usb_drv.c **** U8 ep_num;
+  63:usb/usb_drv.c **** 
+  64:usb/usb_drv.c ****    ep_num = 0;
+  65:usb/usb_drv.c ****    interrupt_flags = Usb_interrupt_flags();
+  65               		.loc 1 65 0
+  66 002c 2091 F400 		lds r18,244
+  67               	.LVL5:
+  64:usb/usb_drv.c ****    interrupt_flags = Usb_interrupt_flags();
+  68               		.loc 1 64 0
+  69 0030 90E0      		ldi r25,0
+  70               	.LVL6:
+  71               	.L4:
+  66:usb/usb_drv.c **** 
+  67:usb/usb_drv.c ****    while(ep_num < MAX_EP_NB)
+  68:usb/usb_drv.c ****    {
+  69:usb/usb_drv.c ****       if (interrupt_flags & 1)
+  72               		.loc 1 69 0
+  73 0032 822F      		mov r24,r18
+  74 0034 8170      		andi r24,lo8(1)
+  75 0036 20FD      		sbrc r18,0
+  76 0038 00C0      		rjmp .L5
+  70:usb/usb_drv.c ****       {
+  71:usb/usb_drv.c ****          return (ep_num);
+  72:usb/usb_drv.c ****       }
+  73:usb/usb_drv.c ****       else
+  74:usb/usb_drv.c ****       {
+  75:usb/usb_drv.c ****          ep_num++;
+  77               		.loc 1 75 0
+  78 003a 9F5F      		subi r25,lo8(-(1))
+  79               	.LVL7:
+  76:usb/usb_drv.c ****          interrupt_flags = interrupt_flags >> 1;
+  80               		.loc 1 76 0
+  81 003c 2695      		lsr r18
+  82               	.LVL8:
+  67:usb/usb_drv.c ****    {
+  83               		.loc 1 67 0
+  84 003e 9730      		cpi r25,lo8(7)
+  85 0040 01F4      		brne .L4
+  86 0042 0895      		ret
+  87               	.L5:
+  71:usb/usb_drv.c ****       }
+  88               		.loc 1 71 0
+  89 0044 892F      		mov r24,r25
+  77:usb/usb_drv.c ****       }
+  78:usb/usb_drv.c ****    }
+  79:usb/usb_drv.c ****    return 0;
+  80:usb/usb_drv.c **** }
+  90               		.loc 1 80 0
+  91 0046 0895      		ret
+  92               		.cfi_endproc
+  93               	.LFE2:
+  95               	.global	usb_send_packet
+  97               	usb_send_packet:
+  98               	.LFB3:
+  81:usb/usb_drv.c **** 
+  82:usb/usb_drv.c **** //! usb_send_packet.
+  83:usb/usb_drv.c **** //!
+  84:usb/usb_drv.c **** //! This function moves the data pointed by tbuf to the selected endpoint fifo
+  85:usb/usb_drv.c **** //! and sends it through the USB.
+  86:usb/usb_drv.c **** //!
+  87:usb/usb_drv.c **** //!
+  88:usb/usb_drv.c **** //! @param ep_num       number of the addressed endpoint
+  89:usb/usb_drv.c **** //! @param *tbuf        address of the first data to send
+  90:usb/usb_drv.c **** //! @param data_length  number of bytes to send
+  91:usb/usb_drv.c **** //!
+  92:usb/usb_drv.c **** //! @return address of the next U8 to send.
+  93:usb/usb_drv.c **** //!
+  94:usb/usb_drv.c **** //! Example:
+  95:usb/usb_drv.c **** //! usb_send_packet(3,&first_data,0x20);    // send packet on the endpoint #3
+  96:usb/usb_drv.c **** //! while(!(Usb_tx_complete));              // wait packet ACK'ed by the Host
+  97:usb/usb_drv.c **** //! Usb_clear_tx_complete();                     // acknowledge the transmit
+  98:usb/usb_drv.c **** //!
+  99:usb/usb_drv.c **** //! Note:
+ 100:usb/usb_drv.c **** //! tbuf is incremented of 'data_length'.
+ 101:usb/usb_drv.c **** //!
+ 102:usb/usb_drv.c **** U8 usb_send_packet(U8 ep_num, U8* tbuf, U8 data_length)
+ 103:usb/usb_drv.c **** {
+  99               		.loc 1 103 0
+ 100               		.cfi_startproc
+ 101               	.LVL9:
+ 102               	/* prologue: function */
+ 103               	/* frame size = 0 */
+ 104               	/* stack size = 0 */
+ 105               	.L__stack_usage = 0
+ 104:usb/usb_drv.c **** U8 remaining_length;
+ 105:usb/usb_drv.c **** 
+ 106:usb/usb_drv.c ****    remaining_length = data_length;
+ 107:usb/usb_drv.c ****    Usb_select_endpoint(ep_num);
+ 106               		.loc 1 107 0
+ 107 0048 8093 E900 		sts 233,r24
+ 108               	.LVL10:
+ 109               	.L9:
+ 108:usb/usb_drv.c ****    while(Is_usb_write_enabled() && (0 != remaining_length))
+ 110               		.loc 1 108 0
+ 111 004c 8091 E800 		lds r24,232
+ 112 0050 85FF      		sbrs r24,5
+ 113 0052 00C0      		rjmp .L10
+ 114               		.loc 1 108 0 is_stmt 0 discriminator 1
+ 115 0054 4423      		tst r20
+ 116 0056 01F0      		breq .L10
+ 109:usb/usb_drv.c ****    {
+ 110:usb/usb_drv.c ****       Usb_write_byte(*tbuf);
+ 117               		.loc 1 110 0 is_stmt 1
+ 118 0058 FB01      		movw r30,r22
+ 119 005a 8191      		ld r24,Z+
+ 120 005c BF01      		movw r22,r30
+ 121               	.LVL11:
+ 122 005e 8093 F100 		sts 241,r24
+ 111:usb/usb_drv.c ****       remaining_length--;
+ 123               		.loc 1 111 0
+ 124 0062 4150      		subi r20,lo8(-(-1))
+ 125               	.LVL12:
+ 126 0064 00C0      		rjmp .L9
+ 127               	.L10:
+ 112:usb/usb_drv.c ****       tbuf++;
+ 113:usb/usb_drv.c ****    }
+ 114:usb/usb_drv.c ****    return remaining_length;
+ 115:usb/usb_drv.c **** }
+ 128               		.loc 1 115 0
+ 129 0066 842F      		mov r24,r20
+ 130 0068 0895      		ret
+ 131               		.cfi_endproc
+ 132               	.LFE3:
+ 134               	.global	usb_read_packet
+ 136               	usb_read_packet:
+ 137               	.LFB4:
+ 116:usb/usb_drv.c **** 
+ 117:usb/usb_drv.c **** //! usb_read_packet.
+ 118:usb/usb_drv.c **** //!
+ 119:usb/usb_drv.c **** //! This function moves the data stored in the selected endpoint fifo to
+ 120:usb/usb_drv.c **** //! the address specified by *rbuf.
+ 121:usb/usb_drv.c **** //!
+ 122:usb/usb_drv.c **** //!
+ 123:usb/usb_drv.c **** //! @param ep_num       number of the addressed endpoint
+ 124:usb/usb_drv.c **** //! @param *rbuf        aaddress of the first data to write with the USB data
+ 125:usb/usb_drv.c **** //! @param data_length  number of bytes to read
+ 126:usb/usb_drv.c **** //!
+ 127:usb/usb_drv.c **** //! @return address of the next U8 to send.
+ 128:usb/usb_drv.c **** //!
+ 129:usb/usb_drv.c **** //! Example:
+ 130:usb/usb_drv.c **** //! while(!(Usb_rx_complete));                      // wait new packet received
+ 131:usb/usb_drv.c **** //! usb_read_packet(4,&first_data,usb_get_nb_byte); // read packet from ep 4
+ 132:usb/usb_drv.c **** //! Usb_clear_rx();                                 // acknowledge the transmit
+ 133:usb/usb_drv.c **** //!
+ 134:usb/usb_drv.c **** //! Note:
+ 135:usb/usb_drv.c **** //! rbuf is incremented of 'data_length'.
+ 136:usb/usb_drv.c **** //!
+ 137:usb/usb_drv.c **** U8 usb_read_packet(U8 ep_num, U8* rbuf, U8  data_length)
+ 138:usb/usb_drv.c **** {
+ 138               		.loc 1 138 0
+ 139               		.cfi_startproc
+ 140               	.LVL13:
+ 141               	/* prologue: function */
+ 142               	/* frame size = 0 */
+ 143               	/* stack size = 0 */
+ 144               	.L__stack_usage = 0
+ 139:usb/usb_drv.c **** U8 remaining_length;
+ 140:usb/usb_drv.c **** 
+ 141:usb/usb_drv.c ****    remaining_length = data_length;
+ 142:usb/usb_drv.c ****    Usb_select_endpoint(ep_num);
+ 145               		.loc 1 142 0
+ 146 006a 8093 E900 		sts 233,r24
+ 147               	.LVL14:
+ 148               	.L16:
+ 143:usb/usb_drv.c **** 
+ 144:usb/usb_drv.c ****    while(Is_usb_read_enabled() && (0 != remaining_length))
+ 149               		.loc 1 144 0
+ 150 006e 8091 E800 		lds r24,232
+ 151 0072 85FF      		sbrs r24,5
+ 152 0074 00C0      		rjmp .L17
+ 153               		.loc 1 144 0 is_stmt 0 discriminator 1
+ 154 0076 4423      		tst r20
+ 155 0078 01F0      		breq .L17
+ 145:usb/usb_drv.c ****    {
+ 146:usb/usb_drv.c ****       *rbuf = Usb_read_byte();
+ 156               		.loc 1 146 0 is_stmt 1
+ 157 007a 8091 F100 		lds r24,241
+ 158 007e FB01      		movw r30,r22
+ 159 0080 8193      		st Z+,r24
+ 160 0082 BF01      		movw r22,r30
+ 161               	.LVL15:
+ 147:usb/usb_drv.c ****       remaining_length--;
+ 162               		.loc 1 147 0
+ 163 0084 4150      		subi r20,lo8(-(-1))
+ 164               	.LVL16:
+ 165 0086 00C0      		rjmp .L16
+ 166               	.L17:
+ 148:usb/usb_drv.c ****       rbuf++;
+ 149:usb/usb_drv.c ****    }
+ 150:usb/usb_drv.c ****    return remaining_length;
+ 151:usb/usb_drv.c **** }
+ 167               		.loc 1 151 0
+ 168 0088 842F      		mov r24,r20
+ 169 008a 0895      		ret
+ 170               		.cfi_endproc
+ 171               	.LFE4:
+ 173               	.global	usb_halt_endpoint
+ 175               	usb_halt_endpoint:
+ 176               	.LFB5:
+ 152:usb/usb_drv.c **** 
+ 153:usb/usb_drv.c **** //! usb_halt_endpoint.
+ 154:usb/usb_drv.c **** //!
+ 155:usb/usb_drv.c **** //! This function sends a STALL handshake for the next Host request. A STALL
+ 156:usb/usb_drv.c **** //! handshake will be send for each next request untill a SETUP or a Clear Halt
+ 157:usb/usb_drv.c **** //! Feature occurs for this endpoint.
+ 158:usb/usb_drv.c **** //!
+ 159:usb/usb_drv.c **** //! @param ep_num number of the addressed endpoint
+ 160:usb/usb_drv.c **** //!
+ 161:usb/usb_drv.c **** //! @return none
+ 162:usb/usb_drv.c **** //!
+ 163:usb/usb_drv.c **** void usb_halt_endpoint (U8 ep_num)
+ 164:usb/usb_drv.c **** {
+ 177               		.loc 1 164 0
+ 178               		.cfi_startproc
+ 179               	.LVL17:
+ 180               	/* prologue: function */
+ 181               	/* frame size = 0 */
+ 182               	/* stack size = 0 */
+ 183               	.L__stack_usage = 0
+ 165:usb/usb_drv.c ****    Usb_select_endpoint(ep_num);
+ 184               		.loc 1 165 0
+ 185 008c 8093 E900 		sts 233,r24
+ 166:usb/usb_drv.c ****    Usb_enable_stall_handshake();
+ 186               		.loc 1 166 0
+ 187 0090 EBEE      		ldi r30,lo8(-21)
+ 188 0092 F0E0      		ldi r31,0
+ 189 0094 8081      		ld r24,Z
+ 190               	.LVL18:
+ 191 0096 8062      		ori r24,lo8(32)
+ 192 0098 8083      		st Z,r24
+ 193               	.LVL19:
+ 194 009a 0895      		ret
+ 195               		.cfi_endproc
+ 196               	.LFE5:
+ 198               	.global	usb_init_device
+ 200               	usb_init_device:
+ 201               	.LFB6:
+ 167:usb/usb_drv.c **** }
+ 168:usb/usb_drv.c **** 
+ 169:usb/usb_drv.c **** //! usb_init_device.
+ 170:usb/usb_drv.c **** //!
+ 171:usb/usb_drv.c **** //! This function initializes the USB device controller and
+ 172:usb/usb_drv.c **** //! configures the Default Control Endpoint.
+ 173:usb/usb_drv.c **** //!
+ 174:usb/usb_drv.c **** //!
+ 175:usb/usb_drv.c **** //! @param none
+ 176:usb/usb_drv.c **** //!
+ 177:usb/usb_drv.c **** //! @return status
+ 178:usb/usb_drv.c **** //!
+ 179:usb/usb_drv.c **** U8 usb_init_device (void)
+ 180:usb/usb_drv.c **** {
+ 202               		.loc 1 180 0
+ 203               		.cfi_startproc
+ 204               	/* prologue: function */
+ 205               	/* frame size = 0 */
+ 206               	/* stack size = 0 */
+ 207               	.L__stack_usage = 0
+ 181:usb/usb_drv.c ****       Usb_select_endpoint(EP_CONTROL);
+ 208               		.loc 1 181 0
+ 209 009c 1092 E900 		sts 233,__zero_reg__
+ 182:usb/usb_drv.c ****       if(!Is_usb_endpoint_enabled())
+ 210               		.loc 1 182 0
+ 211 00a0 8091 EB00 		lds r24,235
+ 212 00a4 80FD      		sbrc r24,0
+ 213 00a6 00C0      		rjmp .L24
+ 183:usb/usb_drv.c ****       {
+ 184:usb/usb_drv.c ****          return usb_configure_endpoint(EP_CONTROL,    \
+ 214               		.loc 1 184 0
+ 215 00a8 1092 E900 		sts 233,__zero_reg__
+ 216 00ac 60E2      		ldi r22,lo8(32)
+ 217 00ae 82E0      		ldi r24,lo8(2)
+ 218 00b0 0C94 0000 		jmp usb_config_ep
+ 219               	.LVL20:
+ 220               	.L24:
+ 185:usb/usb_drv.c ****                                 TYPE_CONTROL,  \
+ 186:usb/usb_drv.c ****                                 DIRECTION_OUT, \
+ 187:usb/usb_drv.c ****                                 SIZE_32,       \
+ 188:usb/usb_drv.c ****                                 ONE_BANK,      \
+ 189:usb/usb_drv.c ****                                 NYET_DISABLED);
+ 190:usb/usb_drv.c ****       }
+ 191:usb/usb_drv.c ****    return FALSE;
+ 192:usb/usb_drv.c **** }
+ 221               		.loc 1 192 0
+ 222 00b4 80E0      		ldi r24,0
+ 223 00b6 0895      		ret
+ 224               		.cfi_endproc
+ 225               	.LFE6:
+ 227               	.Letext0:
+ 228               		.file 2 "./conf/compiler.h"
+ 229               		.file 3 "c:\\program files (x86)\\arduino\\hardware\\tools\\avr\\avr\\include\\stdint.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 usb_drv.c
+C:\Users\chris\AppData\Local\Temp\cc6lhhse.s:2      *ABS*:0000003e __SP_H__
+C:\Users\chris\AppData\Local\Temp\cc6lhhse.s:3      *ABS*:0000003d __SP_L__
+C:\Users\chris\AppData\Local\Temp\cc6lhhse.s:4      *ABS*:0000003f __SREG__
+C:\Users\chris\AppData\Local\Temp\cc6lhhse.s:5      *ABS*:00000000 __tmp_reg__
+C:\Users\chris\AppData\Local\Temp\cc6lhhse.s:6      *ABS*:00000001 __zero_reg__
+C:\Users\chris\AppData\Local\Temp\cc6lhhse.s:12     .text:00000000 usb_config_ep
+C:\Users\chris\AppData\Local\Temp\cc6lhhse.s:56     .text:0000002c usb_select_enpoint_interrupt
+C:\Users\chris\AppData\Local\Temp\cc6lhhse.s:97     .text:00000048 usb_send_packet
+C:\Users\chris\AppData\Local\Temp\cc6lhhse.s:136    .text:0000006a usb_read_packet
+C:\Users\chris\AppData\Local\Temp\cc6lhhse.s:175    .text:0000008c usb_halt_endpoint
+C:\Users\chris\AppData\Local\Temp\cc6lhhse.s:200    .text:0000009c usb_init_device
+
+NO UNDEFINED SYMBOLS

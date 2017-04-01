@@ -1,0 +1,186 @@
+<AVRStudio>
+   <MANAGEMENT>
+      <ProjectName>mouse</ProjectName>
+      <Created>01-Aug-2006 15:21:17</Created>
+      <LastEdit>18-Jan-2007 11:31:05</LastEdit>
+      <ICON>241</ICON>
+      <ProjectType>0</ProjectType>
+      <Created>01-Aug-2006 15:21:17</Created>
+      <Version>4</Version>
+      <Build>4, 12, 0, 490</Build>
+      <ProjectTypeName>AVR GCC</ProjectTypeName>
+   </MANAGEMENT>
+   <CODE_CREATION>
+      <ObjectFile>mouse.elf</ObjectFile>
+      <EntryFile/>
+      <SaveFolder>D:\work_demo_avr_new_arch\Official Packages\mouse\at90usb128\demo\mouse\gcc\</SaveFolder>
+   </CODE_CREATION>
+   <DEBUG_TARGET>
+      <CURRENT_TARGET>JTAGICE mkII</CURRENT_TARGET>
+      <CURRENT_PART>AT90USB1287</CURRENT_PART>
+      <BREAKPOINTS/>
+      <IO_EXPAND>
+         <HIDE>false</HIDE>
+      </IO_EXPAND>
+      <REGISTERNAMES>
+         <Register>R00</Register>
+         <Register>R01</Register>
+         <Register>R02</Register>
+         <Register>R03</Register>
+         <Register>R04</Register>
+         <Register>R05</Register>
+         <Register>R06</Register>
+         <Register>R07</Register>
+         <Register>R08</Register>
+         <Register>R09</Register>
+         <Register>R10</Register>
+         <Register>R11</Register>
+         <Register>R12</Register>
+         <Register>R13</Register>
+         <Register>R14</Register>
+         <Register>R15</Register>
+         <Register>R16</Register>
+         <Register>R17</Register>
+         <Register>R18</Register>
+         <Register>R19</Register>
+         <Register>R20</Register>
+         <Register>R21</Register>
+         <Register>R22</Register>
+         <Register>R23</Register>
+         <Register>R24</Register>
+         <Register>R25</Register>
+         <Register>R26</Register>
+         <Register>R27</Register>
+         <Register>R28</Register>
+         <Register>R29</Register>
+         <Register>R30</Register>
+         <Register>R31</Register>
+      </REGISTERNAMES>
+      <COM>Auto</COM>
+      <COMType>0</COMType>
+      <WATCHNUM>0</WATCHNUM>
+      <WATCHNAMES>
+         <Pane0/>
+         <Pane1/>
+         <Pane2/>
+         <Pane3/>
+      </WATCHNAMES>
+      <BreakOnTrcaeFull>0</BreakOnTrcaeFull>
+   </DEBUG_TARGET>
+   <Debugger>
+      <modules>
+         <module/>
+      </modules>
+      <Triggers/>
+   </Debugger>
+   <AVRGCCPLUGIN>
+      <FILES>
+         <SOURCEFILE>C:\Atmel\at90usb128-demo-mouse\at90usb128\demo\mouse\usb_descriptors.c</SOURCEFILE>
+         <SOURCEFILE>C:\Atmel\at90usb128-demo-mouse\at90usb128\demo\mouse\mouse_task.c</SOURCEFILE>
+         <SOURCEFILE>C:\Atmel\at90usb128-demo-mouse\at90usb128\demo\mouse\main.c</SOURCEFILE>
+         <SOURCEFILE>C:\Atmel\at90usb128-demo-mouse\at90usb128\demo\mouse\usb_specific_request.c</SOURCEFILE>
+         <SOURCEFILE>C:\Atmel\at90usb128-demo-mouse\at90usb128\lib_board\stk_525\stk_525.c</SOURCEFILE>
+         <SOURCEFILE>C:\Atmel\at90usb128-demo-mouse\at90usb128\lib_mcu\power\power_drv.c</SOURCEFILE>
+         <SOURCEFILE>C:\Atmel\at90usb128-demo-mouse\at90usb128\lib_mcu\usb\usb_drv.c</SOURCEFILE>
+         <SOURCEFILE>C:\Atmel\at90usb128-demo-mouse\at90usb128\modules\usb\usb_task.c</SOURCEFILE>
+         <SOURCEFILE>C:\Atmel\at90usb128-demo-mouse\at90usb128\modules\usb\device_chap9\usb_device_task.c</SOURCEFILE>
+         <SOURCEFILE>C:\Atmel\at90usb128-demo-mouse\at90usb128\modules\usb\device_chap9\usb_standard_request.c</SOURCEFILE>
+         <SOURCEFILE>C:\Atmel\at90usb128-demo-mouse\common\modules\scheduler\scheduler.c</SOURCEFILE>
+         <SOURCEFILE>C:\Atmel\at90usb128-demo-mouse\common\lib_mcu\adc\adc_drv.c</SOURCEFILE>
+         <OTHERFILE>Makefile</OTHERFILE>
+      </FILES>
+      <CONFIGS>
+         <CONFIG>
+            <NAME>default</NAME>
+            <USESEXTERNALMAKEFILE>YES</USESEXTERNALMAKEFILE>
+            <EXTERNALMAKEFILE>Makefile</EXTERNALMAKEFILE>
+            <PART>atmega128</PART>
+            <HEX>1</HEX>
+            <LIST>0</LIST>
+            <MAP>0</MAP>
+            <OUTPUTFILENAME>mouse.elf</OUTPUTFILENAME>
+            <OUTPUTDIR>default\</OUTPUTDIR>
+            <ISDIRTY>1</ISDIRTY>
+            <OPTIONS/>
+            <INCDIRS/>
+            <LIBDIRS/>
+            <LIBS/>
+            <LINKOBJECTS/>
+            <OPTIONSFORALL>-Wall -gdwarf-2  -O0 -fsigned-char</OPTIONSFORALL>
+            <LINKEROPTIONS/>
+            <SEGMENTS/>
+         </CONFIG>
+      </CONFIGS>
+      <LASTCONFIG>default</LASTCONFIG>
+      <USES_WINAVR>1</USES_WINAVR>
+      <GCC_LOC>C:\WinAVR\bin\avr-gcc.exe</GCC_LOC>
+      <MAKE_LOC>C:\WinAVR\utils\bin\make.exe</MAKE_LOC>
+   </AVRGCCPLUGIN>
+   <ProjectFiles>
+      <Files>
+         <Name>C:\Atmel\at90usb128-demo-mouse\at90usb128\demo\mouse\usb_descriptors.c</Name>
+         <Name>C:\Atmel\at90usb128-demo-mouse\at90usb128\demo\mouse\mouse_task.c</Name>
+         <Name>C:\Atmel\at90usb128-demo-mouse\at90usb128\demo\mouse\main.c</Name>
+         <Name>C:\Atmel\at90usb128-demo-mouse\at90usb128\demo\mouse\usb_specific_request.c</Name>
+         <Name>C:\Atmel\at90usb128-demo-mouse\at90usb128\lib_board\stk_525\stk_525.c</Name>
+         <Name>C:\Atmel\at90usb128-demo-mouse\at90usb128\lib_mcu\power\power_drv.c</Name>
+         <Name>C:\Atmel\at90usb128-demo-mouse\at90usb128\lib_mcu\usb\usb_drv.c</Name>
+         <Name>C:\Atmel\at90usb128-demo-mouse\at90usb128\modules\usb\usb_task.c</Name>
+         <Name>C:\Atmel\at90usb128-demo-mouse\at90usb128\modules\usb\device_chap9\usb_device_task.c</Name>
+         <Name>C:\Atmel\at90usb128-demo-mouse\at90usb128\modules\usb\device_chap9\usb_standard_request.c</Name>
+         <Name>C:\Atmel\at90usb128-demo-mouse\common\lib_mcu\wdt\wdt_drv.c</Name>
+         <Name>C:\Atmel\at90usb128-demo-mouse\common\modules\scheduler\scheduler.c</Name>
+         <Name>C:\Atmel\at90usb128-demo-mouse\common\lib_mcu\adc\adc_drv.c</Name>
+      </Files>
+   </ProjectFiles>
+   <IOView>
+      <usergroups/>
+   </IOView>
+   <Files>
+      <File00000>
+         <FileId>00000</FileId>
+         <FileName>C:\Atmel\at90usb128-demo-mouse\at90usb128\demo\mouse\mouse_task.c</FileName>
+         <Status>257</Status>
+      </File00000>
+      <File00001>
+         <FileId>00001</FileId>
+         <FileName>C:\Atmel\at90usb128-demo-mouse\at90usb128\lib_board\stk_525\stk_525.c</FileName>
+         <Status>257</Status>
+      </File00001>
+      <File00002>
+         <FileId>00002</FileId>
+         <FileName>C:\Atmel\at90usb128-demo-mouse\common\lib_mcu\adc\adc_drv.c</FileName>
+         <Status>257</Status>
+      </File00002>
+      <File00003>
+         <FileId>00003</FileId>
+         <FileName>C:\Atmel\at90usb128-demo-mouse\common\lib_mcu\compiler.h</FileName>
+         <Status>3</Status>
+      </File00003>
+   </Files>
+   <Workspace>
+      <File00000>
+         <Position>352 96 1085 542</Position>
+         <LineCol>0 0</LineCol>
+      </File00000>
+      <File00001>
+         <Position>371 115 1098 533</Position>
+         <LineCol>0 0</LineCol>
+      </File00001>
+      <File00002>
+         <Position>393 137 1120 555</Position>
+         <LineCol>0 0</LineCol>
+      </File00002>
+      <File00003>
+         <Position>302 72 927 747</Position>
+         <LineCol>0 0</LineCol>
+         <State>Maximized</State>
+      </File00003>
+   </Workspace>
+   <Events>
+      <Bookmarks/>
+   </Events>
+   <Trace>
+      <Filters/>
+   </Trace>
+</AVRStudio>

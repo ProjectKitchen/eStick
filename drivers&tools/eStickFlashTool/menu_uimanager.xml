@@ -1,0 +1,28 @@
+<ui>
+  <menubar name="MainMenu">
+    <menu name="FileMenu" action="FileMenuAction">
+      <menuitem name="Open" action="OpenMenuItem" />
+      <menuitem name="Save" action="SaveMenuItem" />
+      <separator/>
+      <menuitem name="Quit" action="QuitMenuItem" />
+    </menu>
+    <menu name="DeviceMenu" action="DeviceMenuAction">
+      <menuitem name="Connect" action="ConnectMenuItem"/>
+      <menuitem name="Erase" action="EraseMenuItem"/>
+      <menuitem name="Blankcheck" action="BlankcheckMenuItem"/>
+      <menuitem name="Program" action="ProgramMenuItem"/>
+      <menuitem name="Verify" action="VerifyMenuItem"/>
+      <menuitem name="Read" action="ReadMenuItem"/>
+      <menuitem name="Start" action="StartMenuItem"/>
+      <menuitem name="Disconnect" action="DisconnectMenuItem"/>
+    </menu>
+    <menu name="OptionsMenu" action="OptionsMenuAction"> 
+<!--       <menuitem name="Settings" action="SettingsMenuItem"/> -->
+      <menuitem name="Appearance" action="AppearanceMenuItem"/> 
+    </menu> 
+    <menu name="HelpMenu" action="HelpMenuAction">
+      <menuitem name="Help" action="HelpMenuItem"/>
+      <menuitem name="About" action="AboutMenuItem"/>
+    </menu>
+  </menubar>
+</ui>

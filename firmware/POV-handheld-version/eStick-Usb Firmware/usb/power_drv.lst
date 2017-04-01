@@ -1,0 +1,274 @@
+   1               		.file	"power_drv.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               	.global	set_power_down_mode
+  12               	set_power_down_mode:
+  13               	.LFB1:
+  14               		.file 1 "usb/power_drv.c"
+   1:usb/power_drv.c **** //! @file power_drv.c,v
+   2:usb/power_drv.c **** //!
+   3:usb/power_drv.c **** //! Copyright (c) 2006 Atmel.
+   4:usb/power_drv.c **** //!
+   5:usb/power_drv.c **** //! Use of this program is subject to Atmel's End User License Agreement.
+   6:usb/power_drv.c **** //! Please read file license.txt for copyright notice.
+   7:usb/power_drv.c **** //!
+   8:usb/power_drv.c **** //! @brief This file contains the Power management driver routines.
+   9:usb/power_drv.c **** //!
+  10:usb/power_drv.c **** //! This file contains the Power management driver routines.
+  11:usb/power_drv.c **** //!
+  12:usb/power_drv.c **** //! @version 1.1 at90usb162-hidgen-1_0_1 $Id: power_drv.c,v 1.1 2006/08/29 15:58:42 arobert Exp $
+  13:usb/power_drv.c **** //!
+  14:usb/power_drv.c **** //! @todo Implemets adc, stanby, extended stanby and power save modes
+  15:usb/power_drv.c **** //! @bug
+  16:usb/power_drv.c **** 
+  17:usb/power_drv.c **** //_____ I N C L U D E S ____________________________________________________
+  18:usb/power_drv.c **** 
+  19:usb/power_drv.c **** #include "config.h"
+  20:usb/power_drv.c **** #include "power_drv.h"
+  21:usb/power_drv.c **** 
+  22:usb/power_drv.c **** //_____ M A C R O S ________________________________________________________
+  23:usb/power_drv.c **** 
+  24:usb/power_drv.c **** //_____ D E C L A R A T I O N ______________________________________________
+  25:usb/power_drv.c **** 
+  26:usb/power_drv.c **** //! set_power_down_mode.
+  27:usb/power_drv.c **** //!
+  28:usb/power_drv.c **** //! This function makes the AVR core enter power down mode.
+  29:usb/power_drv.c **** //!
+  30:usb/power_drv.c **** //! @param none
+  31:usb/power_drv.c **** //!
+  32:usb/power_drv.c **** //! @return none.
+  33:usb/power_drv.c **** //!
+  34:usb/power_drv.c **** void set_power_down_mode(void)
+  35:usb/power_drv.c **** {
+  15               		.loc 1 35 0
+  16               		.cfi_startproc
+  17               	/* prologue: function */
+  18               	/* frame size = 0 */
+  19               	/* stack size = 0 */
+  20               	.L__stack_usage = 0
+  36:usb/power_drv.c ****    Setup_power_down_mode();
+  21               		.loc 1 36 0
+  22 0000 13BE      		out 0x33,__zero_reg__
+  23 0002 83B7      		in r24,0x33
+  24 0004 8560      		ori r24,lo8(5)
+  25 0006 83BF      		out 0x33,r24
+  37:usb/power_drv.c ****    Sleep_instruction();
+  26               		.loc 1 37 0
+  27               	/* #APP */
+  28               	 ;  37 "usb/power_drv.c" 1
+  29 0008 8895      		SLEEP
+  30               	 ;  0 "" 2
+  31               	/* #NOAPP */
+  32 000a 0895      		ret
+  33               		.cfi_endproc
+  34               	.LFE1:
+  36               	.global	set_idle_mode
+  38               	set_idle_mode:
+  39               	.LFB2:
+  38:usb/power_drv.c **** }
+  39:usb/power_drv.c **** 
+  40:usb/power_drv.c **** 
+  41:usb/power_drv.c **** 
+  42:usb/power_drv.c **** //! set_idle_mode.
+  43:usb/power_drv.c **** //!
+  44:usb/power_drv.c **** //! This function makes the AVR core enter idle mode.
+  45:usb/power_drv.c **** //!
+  46:usb/power_drv.c **** //! @param none
+  47:usb/power_drv.c **** //!
+  48:usb/power_drv.c **** //! @return none.
+  49:usb/power_drv.c **** //!
+  50:usb/power_drv.c **** void set_idle_mode(void)
+  51:usb/power_drv.c **** {
+  40               		.loc 1 51 0
+  41               		.cfi_startproc
+  42               	/* prologue: function */
+  43               	/* frame size = 0 */
+  44               	/* stack size = 0 */
+  45               	.L__stack_usage = 0
+  52:usb/power_drv.c ****    Setup_idle_mode();
+  46               		.loc 1 52 0
+  47 000c 13BE      		out 0x33,__zero_reg__
+  48 000e 83B7      		in r24,0x33
+  49 0010 8160      		ori r24,lo8(1)
+  50 0012 83BF      		out 0x33,r24
+  53:usb/power_drv.c ****    Sleep_instruction();
+  51               		.loc 1 53 0
+  52               	/* #APP */
+  53               	 ;  53 "usb/power_drv.c" 1
+  54 0014 8895      		SLEEP
+  55               	 ;  0 "" 2
+  56               	/* #NOAPP */
+  57 0016 0895      		ret
+  58               		.cfi_endproc
+  59               	.LFE2:
+  61               	.global	set_adc_noise_reduction_mode
+  63               	set_adc_noise_reduction_mode:
+  64               	.LFB3:
+  54:usb/power_drv.c **** }
+  55:usb/power_drv.c **** 
+  56:usb/power_drv.c **** //! set_adc_noise_reduction_mode.
+  57:usb/power_drv.c **** //!
+  58:usb/power_drv.c **** //! This function makes the AVR core enter adc noise reduction mode.
+  59:usb/power_drv.c **** //!
+  60:usb/power_drv.c **** //! @param none
+  61:usb/power_drv.c **** //!
+  62:usb/power_drv.c **** //! @return none.
+  63:usb/power_drv.c **** //!
+  64:usb/power_drv.c **** void set_adc_noise_reduction_mode(void)
+  65:usb/power_drv.c **** {
+  65               		.loc 1 65 0
+  66               		.cfi_startproc
+  67               	/* prologue: function */
+  68               	/* frame size = 0 */
+  69               	/* stack size = 0 */
+  70               	.L__stack_usage = 0
+  66:usb/power_drv.c ****    Setup_adc_noise_reduction_mode();
+  71               		.loc 1 66 0
+  72 0018 13BE      		out 0x33,__zero_reg__
+  73 001a 83B7      		in r24,0x33
+  74 001c 8360      		ori r24,lo8(3)
+  75 001e 83BF      		out 0x33,r24
+  67:usb/power_drv.c ****    Sleep_instruction();
+  76               		.loc 1 67 0
+  77               	/* #APP */
+  78               	 ;  67 "usb/power_drv.c" 1
+  79 0020 8895      		SLEEP
+  80               	 ;  0 "" 2
+  81               	/* #NOAPP */
+  82 0022 0895      		ret
+  83               		.cfi_endproc
+  84               	.LFE3:
+  86               	.global	set_power_save_mode
+  88               	set_power_save_mode:
+  89               	.LFB4:
+  68:usb/power_drv.c **** }
+  69:usb/power_drv.c **** 
+  70:usb/power_drv.c **** //! set_power_save_mode.
+  71:usb/power_drv.c **** //!
+  72:usb/power_drv.c **** //! This function makes the AVR core enter power save mode.
+  73:usb/power_drv.c **** //!
+  74:usb/power_drv.c **** //! @param none
+  75:usb/power_drv.c **** //!
+  76:usb/power_drv.c **** //! @return none.
+  77:usb/power_drv.c **** //!
+  78:usb/power_drv.c **** void set_power_save_mode(void)
+  79:usb/power_drv.c **** {
+  90               		.loc 1 79 0
+  91               		.cfi_startproc
+  92               	/* prologue: function */
+  93               	/* frame size = 0 */
+  94               	/* stack size = 0 */
+  95               	.L__stack_usage = 0
+  80:usb/power_drv.c ****    Setup_power_save_mode();
+  96               		.loc 1 80 0
+  97 0024 13BE      		out 0x33,__zero_reg__
+  98 0026 83B7      		in r24,0x33
+  99 0028 8760      		ori r24,lo8(7)
+ 100 002a 83BF      		out 0x33,r24
+  81:usb/power_drv.c ****    Sleep_instruction();
+ 101               		.loc 1 81 0
+ 102               	/* #APP */
+ 103               	 ;  81 "usb/power_drv.c" 1
+ 104 002c 8895      		SLEEP
+ 105               	 ;  0 "" 2
+ 106               	/* #NOAPP */
+ 107 002e 0895      		ret
+ 108               		.cfi_endproc
+ 109               	.LFE4:
+ 111               	.global	set_standby_mode
+ 113               	set_standby_mode:
+ 114               	.LFB5:
+  82:usb/power_drv.c **** }
+  83:usb/power_drv.c **** 
+  84:usb/power_drv.c **** //! set_standby_mode.
+  85:usb/power_drv.c **** //!
+  86:usb/power_drv.c **** //! This function makes the AVR core enter standby mode.
+  87:usb/power_drv.c **** //!
+  88:usb/power_drv.c **** //! @param none
+  89:usb/power_drv.c **** //!
+  90:usb/power_drv.c **** //! @return none.
+  91:usb/power_drv.c **** //!
+  92:usb/power_drv.c **** void set_standby_mode(void)
+  93:usb/power_drv.c **** {
+ 115               		.loc 1 93 0
+ 116               		.cfi_startproc
+ 117               	/* prologue: function */
+ 118               	/* frame size = 0 */
+ 119               	/* stack size = 0 */
+ 120               	.L__stack_usage = 0
+  94:usb/power_drv.c ****    Setup_standby_mode();
+ 121               		.loc 1 94 0
+ 122 0030 13BE      		out 0x33,__zero_reg__
+ 123 0032 83B7      		in r24,0x33
+ 124 0034 8D60      		ori r24,lo8(13)
+ 125 0036 83BF      		out 0x33,r24
+  95:usb/power_drv.c ****    Sleep_instruction();
+ 126               		.loc 1 95 0
+ 127               	/* #APP */
+ 128               	 ;  95 "usb/power_drv.c" 1
+ 129 0038 8895      		SLEEP
+ 130               	 ;  0 "" 2
+ 131               	/* #NOAPP */
+ 132 003a 0895      		ret
+ 133               		.cfi_endproc
+ 134               	.LFE5:
+ 136               	.global	set_ext_standby_mode
+ 138               	set_ext_standby_mode:
+ 139               	.LFB6:
+  96:usb/power_drv.c **** }
+  97:usb/power_drv.c **** 
+  98:usb/power_drv.c **** //! set_ext_standby_mode.
+  99:usb/power_drv.c **** //!
+ 100:usb/power_drv.c **** //! This function makes the AVR core enter extended standby mode.
+ 101:usb/power_drv.c **** //!
+ 102:usb/power_drv.c **** //! @param none
+ 103:usb/power_drv.c **** //!
+ 104:usb/power_drv.c **** //! @return none.
+ 105:usb/power_drv.c **** //!
+ 106:usb/power_drv.c **** void set_ext_standby_mode(void)
+ 107:usb/power_drv.c **** {
+ 140               		.loc 1 107 0
+ 141               		.cfi_startproc
+ 142               	/* prologue: function */
+ 143               	/* frame size = 0 */
+ 144               	/* stack size = 0 */
+ 145               	.L__stack_usage = 0
+ 108:usb/power_drv.c ****    Setup_ext_standby_mode();
+ 146               		.loc 1 108 0
+ 147 003c 13BE      		out 0x33,__zero_reg__
+ 148 003e 83B7      		in r24,0x33
+ 149 0040 8F60      		ori r24,lo8(15)
+ 150 0042 83BF      		out 0x33,r24
+ 109:usb/power_drv.c ****    Sleep_instruction();
+ 151               		.loc 1 109 0
+ 152               	/* #APP */
+ 153               	 ;  109 "usb/power_drv.c" 1
+ 154 0044 8895      		SLEEP
+ 155               	 ;  0 "" 2
+ 156               	/* #NOAPP */
+ 157 0046 0895      		ret
+ 158               		.cfi_endproc
+ 159               	.LFE6:
+ 161               	.Letext0:
+ 162               		.file 2 "c:\\program files (x86)\\arduino\\hardware\\tools\\avr\\avr\\include\\stdint.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 power_drv.c
+C:\Users\chris\AppData\Local\Temp\ccMj0iEy.s:2      *ABS*:0000003e __SP_H__
+C:\Users\chris\AppData\Local\Temp\ccMj0iEy.s:3      *ABS*:0000003d __SP_L__
+C:\Users\chris\AppData\Local\Temp\ccMj0iEy.s:4      *ABS*:0000003f __SREG__
+C:\Users\chris\AppData\Local\Temp\ccMj0iEy.s:5      *ABS*:00000000 __tmp_reg__
+C:\Users\chris\AppData\Local\Temp\ccMj0iEy.s:6      *ABS*:00000001 __zero_reg__
+C:\Users\chris\AppData\Local\Temp\ccMj0iEy.s:12     .text:00000000 set_power_down_mode
+C:\Users\chris\AppData\Local\Temp\ccMj0iEy.s:38     .text:0000000c set_idle_mode
+C:\Users\chris\AppData\Local\Temp\ccMj0iEy.s:63     .text:00000018 set_adc_noise_reduction_mode
+C:\Users\chris\AppData\Local\Temp\ccMj0iEy.s:88     .text:00000024 set_power_save_mode
+C:\Users\chris\AppData\Local\Temp\ccMj0iEy.s:113    .text:00000030 set_standby_mode
+C:\Users\chris\AppData\Local\Temp\ccMj0iEy.s:138    .text:0000003c set_ext_standby_mode
+
+NO UNDEFINED SYMBOLS

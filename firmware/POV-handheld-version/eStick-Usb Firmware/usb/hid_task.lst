@@ -1,0 +1,942 @@
+   1               		.file	"hid_task.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               	.global	hid_task_init
+  12               	hid_task_init:
+  13               	.LFB7:
+  14               		.file 1 "usb/hid_task.c"
+   1:usb/hid_task.c **** //!
+   2:usb/hid_task.c **** //! @file hid_task.c,v
+   3:usb/hid_task.c **** //!
+   4:usb/hid_task.c **** //! Copyright (c) 2004 Atmel.
+   5:usb/hid_task.c **** //!
+   6:usb/hid_task.c **** //! Please read file license.txt for copyright notice.
+   7:usb/hid_task.c **** //!
+   8:usb/hid_task.c **** //! @brief This file manages the generic HID IN/OUT task.
+   9:usb/hid_task.c **** //!
+  10:usb/hid_task.c **** //!
+  11:usb/hid_task.c **** //! @version 1.1 at90usb162-hidgen-1_0_1 $Id: hid_task.c,v 1.1 2006/12/12 09:48:04 arobert Exp $
+  12:usb/hid_task.c **** //!
+  13:usb/hid_task.c **** //! @todo
+  14:usb/hid_task.c **** //! @bug
+  15:usb/hid_task.c **** //!/
+  16:usb/hid_task.c **** 
+  17:usb/hid_task.c **** //_____  I N C L U D E S ___________________________________________________
+  18:usb/hid_task.c **** 
+  19:usb/hid_task.c **** #include "config.h"
+  20:usb/hid_task.c **** #include "conf_usb.h"
+  21:usb/hid_task.c **** #include "usb_drv.h"
+  22:usb/hid_task.c **** #include "usb_descriptors.h"
+  23:usb/hid_task.c **** #include "usb_standard_request.h"
+  24:usb/hid_task.c **** #include "usb_specific_request.h"
+  25:usb/hid_task.c **** #include "eeprom.h"
+  26:usb/hid_task.c **** 
+  27:usb/hid_task.c **** 
+  28:usb/hid_task.c **** //_____ M A C R O S ________________________________________________________
+  29:usb/hid_task.c **** 
+  30:usb/hid_task.c **** 
+  31:usb/hid_task.c **** //_____ D E F I N I T I O N S ______________________________________________
+  32:usb/hid_task.c **** 
+  33:usb/hid_task.c **** 
+  34:usb/hid_task.c **** 
+  35:usb/hid_task.c **** //_____ D E C L A R A T I O N S ____________________________________________
+  36:usb/hid_task.c **** 
+  37:usb/hid_task.c **** extern bit   usb_connected;
+  38:usb/hid_task.c **** extern  U8   usb_configuration_nb;
+  39:usb/hid_task.c **** volatile U8 cpt_sof=0;
+  40:usb/hid_task.c **** U8 last_joy=0;
+  41:usb/hid_task.c **** 
+  42:usb/hid_task.c **** //! Declare function pointer to USB bootloader entry point
+  43:usb/hid_task.c **** void (*start_bootloader) (void)=(void (*)(void))0xf000;
+  44:usb/hid_task.c **** 
+  45:usb/hid_task.c **** 
+  46:usb/hid_task.c **** extern unsigned int PHRASELENGTH;
+  47:usb/hid_task.c **** 
+  48:usb/hid_task.c **** 
+  49:usb/hid_task.c **** //!
+  50:usb/hid_task.c **** //! @brief This function initializes the target board ressources.
+  51:usb/hid_task.c **** //!
+  52:usb/hid_task.c **** //! @warning Code:?? bytes (function code length)
+  53:usb/hid_task.c **** //!
+  54:usb/hid_task.c **** //! @param none
+  55:usb/hid_task.c **** //!
+  56:usb/hid_task.c **** //! @return none
+  57:usb/hid_task.c **** //!
+  58:usb/hid_task.c **** //!/
+  59:usb/hid_task.c **** void hid_task_init(void)
+  60:usb/hid_task.c **** {
+  15               		.loc 1 60 0
+  16               		.cfi_startproc
+  17               	/* prologue: function */
+  18               	/* frame size = 0 */
+  19               	/* stack size = 0 */
+  20               	.L__stack_usage = 0
+  61:usb/hid_task.c ****    Leds_init();
+  21               		.loc 1 61 0
+  22 0000 8FEF      		ldi r24,lo8(-1)
+  23 0002 84B9      		out 0x4,r24
+  24 0004 8FE7      		ldi r24,lo8(127)
+  25 0006 85B9      		out 0x5,r24
+  26 0008 94E0      		ldi r25,lo8(4)
+  27 000a 97B9      		out 0x7,r25
+  28 000c 98B9      		out 0x8,r25
+  62:usb/hid_task.c ****    Joy_init();
+  29               		.loc 1 62 0
+  30 000e 90E1      		ldi r25,lo8(16)
+  31 0010 9AB9      		out 0xa,r25
+  32 0012 9FEE      		ldi r25,lo8(-17)
+  33 0014 9BB9      		out 0xb,r25
+  63:usb/hid_task.c ****    Leds_set_val(0);
+  34               		.loc 1 63 0
+  35 0016 85B9      		out 0x5,r24
+  36 0018 85B1      		in r24,0x5
+  37 001a 85B9      		out 0x5,r24
+  38 001c 0895      		ret
+  39               		.cfi_endproc
+  40               	.LFE7:
+  42               	.global	hid_task
+  44               	hid_task:
+  45               	.LFB8:
+  64:usb/hid_task.c **** }
+  65:usb/hid_task.c **** 
+  66:usb/hid_task.c **** 
+  67:usb/hid_task.c **** 
+  68:usb/hid_task.c **** //! @brief Entry point of the HID generic communication task
+  69:usb/hid_task.c **** //!
+  70:usb/hid_task.c **** //! This function manages IN/OUT repport management.
+  71:usb/hid_task.c **** //!
+  72:usb/hid_task.c **** //! @warning Code:?? bytes (function code length)
+  73:usb/hid_task.c **** //!
+  74:usb/hid_task.c **** //! @param none
+  75:usb/hid_task.c **** //!
+  76:usb/hid_task.c **** //! @return none
+  77:usb/hid_task.c **** int hid_task()
+  78:usb/hid_task.c **** {
+  46               		.loc 1 78 0
+  47               		.cfi_startproc
+  48 001e CF93      		push r28
+  49               	.LCFI0:
+  50               		.cfi_def_cfa_offset 3
+  51               		.cfi_offset 28, -2
+  52 0020 DF93      		push r29
+  53               	.LCFI1:
+  54               		.cfi_def_cfa_offset 4
+  55               		.cfi_offset 29, -3
+  56 0022 00D0      		rcall .
+  57 0024 00D0      		rcall .
+  58               	.LCFI2:
+  59               		.cfi_def_cfa_offset 8
+  60 0026 CDB7      		in r28,__SP_L__
+  61 0028 DEB7      		in r29,__SP_H__
+  62               	.LCFI3:
+  63               		.cfi_def_cfa_register 28
+  64               	/* prologue: function */
+  65               	/* frame size = 4 */
+  66               	/* stack size = 6 */
+  67               	.L__stack_usage = 6
+  68               	.LVL0:
+  79:usb/hid_task.c ****    U8 dummy=0;
+  80:usb/hid_task.c ****    U8 dummy2=0;
+  81:usb/hid_task.c ****    U8 joy;
+  82:usb/hid_task.c ****    U32 volatile tempo;
+  83:usb/hid_task.c ****    U8 led_state;
+  84:usb/hid_task.c ****    U8 led_number;
+  85:usb/hid_task.c ****    U8 phrase_continues;
+  86:usb/hid_task.c **** 
+  87:usb/hid_task.c **** 
+  88:usb/hid_task.c ****     if(Is_device_enumerated())                     //! Check USB HID is enumerated
+  69               		.loc 1 88 0
+  70 002a 8091 0000 		lds r24,usb_configuration_nb
+  71 002e 8823      		tst r24
+  72 0030 01F4      		brne .+2
+  73 0032 00C0      		rjmp .L30
+  89:usb/hid_task.c ****     {
+  90:usb/hid_task.c ****       Usb_select_endpoint(EP_HID_OUT);    //! Get Data repport from Host
+  74               		.loc 1 90 0
+  75 0034 82E0      		ldi r24,lo8(2)
+  76 0036 8093 E900 		sts 233,r24
+  91:usb/hid_task.c ****       if(Is_usb_receive_out())
+  77               		.loc 1 91 0
+  78 003a 8091 E800 		lds r24,232
+  79 003e 82FF      		sbrs r24,2
+  80 0040 00C0      		rjmp .L6
+  92:usb/hid_task.c ****       {
+  93:usb/hid_task.c ****          led_state  = Usb_read_byte()&0x0F;       //! ReportOUT[0] is LED state
+  81               		.loc 1 93 0
+  82 0042 8091 F100 		lds r24,241
+  83 0046 8F70      		andi r24,lo8(15)
+  84               	.LVL1:
+  94:usb/hid_task.c **** 
+  95:usb/hid_task.c ****          if (led_state==0x0F)
+  85               		.loc 1 95 0
+  86 0048 8F30      		cpi r24,lo8(15)
+  87 004a 01F0      		breq .+2
+  88 004c 00C0      		rjmp .L7
+  96:usb/hid_task.c **** 		 {
+  97:usb/hid_task.c **** 		    phrase_continues=Usb_read_byte();
+  89               		.loc 1 97 0
+  90 004e 8091 F100 		lds r24,241
+  91               	.LVL2:
+  98:usb/hid_task.c **** 		    eeprom_write_byte((unsigned char *)PHRASELENGTH++,Usb_read_byte()); 
+  92               		.loc 1 98 0
+  93 0052 9091 F100 		lds r25,241
+  94 0056 A091 0000 		lds r26,PHRASELENGTH
+  95 005a B091 0000 		lds r27,PHRASELENGTH+1
+  96 005e 9D01      		movw r18,r26
+  97 0060 2F5F      		subi r18,-1
+  98 0062 3F4F      		sbci r19,-1
+  99 0064 3093 0000 		sts PHRASELENGTH+1,r19
+ 100 0068 2093 0000 		sts PHRASELENGTH,r18
+ 101               	.LVL3:
+ 102               	.LBB10:
+ 103               	.LBB11:
+ 104               		.file 2 "./eeprom.h"
+   1:./eeprom.h    **** /* Copyright (c) 2002, 2003, 2004, 2007 Marek Michalkiewicz
+   2:./eeprom.h    ****    Copyright (c) 2005, 2006 Bjoern Haase
+   3:./eeprom.h    ****    All rights reserved.
+   4:./eeprom.h    **** 
+   5:./eeprom.h    ****    Redistribution and use in source and binary forms, with or without
+   6:./eeprom.h    ****    modification, are permitted provided that the following conditions are met:
+   7:./eeprom.h    **** 
+   8:./eeprom.h    ****    * Redistributions of source code must retain the above copyright
+   9:./eeprom.h    ****      notice, this list of conditions and the following disclaimer.
+  10:./eeprom.h    **** 
+  11:./eeprom.h    ****    * Redistributions in binary form must reproduce the above copyright
+  12:./eeprom.h    ****      notice, this list of conditions and the following disclaimer in
+  13:./eeprom.h    ****      the documentation and/or other materials provided with the
+  14:./eeprom.h    ****      distribution.
+  15:./eeprom.h    **** 
+  16:./eeprom.h    ****    * Neither the name of the copyright holders nor the names of
+  17:./eeprom.h    ****      contributors may be used to endorse or promote products derived
+  18:./eeprom.h    ****      from this software without specific prior written permission.
+  19:./eeprom.h    **** 
+  20:./eeprom.h    ****   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  21:./eeprom.h    ****   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  22:./eeprom.h    ****   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  23:./eeprom.h    ****   ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+  24:./eeprom.h    ****   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  25:./eeprom.h    ****   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  26:./eeprom.h    ****   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  27:./eeprom.h    ****   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  28:./eeprom.h    ****   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  29:./eeprom.h    ****   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  30:./eeprom.h    ****   POSSIBILITY OF SUCH DAMAGE. */
+  31:./eeprom.h    **** 
+  32:./eeprom.h    **** /* $Id: eeprom.h,v 1.17.2.4 2007/01/23 15:34:58 joerg_wunsch Exp $ */
+  33:./eeprom.h    **** 
+  34:./eeprom.h    **** /*
+  35:./eeprom.h    ****    eeprom.h
+  36:./eeprom.h    **** 
+  37:./eeprom.h    ****    Contributors:
+  38:./eeprom.h    ****      Created by Marek Michalkiewicz <marekm@linux.org.pl>
+  39:./eeprom.h    ****      eeprom_write_word and eeprom_write_block added by Artur Lipowski 
+  40:./eeprom.h    ****      <LAL@pro.onet.pl>
+  41:./eeprom.h    ****      Complete rewrite using the original interface by Bjoern Haase 
+  42:./eeprom.h    ****      <bjoern.haase@de.bosch.com>. 
+  43:./eeprom.h    ****  */
+  44:./eeprom.h    **** 
+  45:./eeprom.h    **** #ifndef _EEPROM_H_
+  46:./eeprom.h    **** #define _EEPROM_H_ 1
+  47:./eeprom.h    **** 
+  48:./eeprom.h    **** #define __need_size_t
+  49:./eeprom.h    **** #include <stddef.h>
+  50:./eeprom.h    **** #include <inttypes.h>
+  51:./eeprom.h    **** 
+  52:./eeprom.h    **** /** \file */
+  53:./eeprom.h    **** 
+  54:./eeprom.h    **** #ifdef __AVR_MEGA__
+  55:./eeprom.h    **** #define XCALL "call"
+  56:./eeprom.h    **** #else
+  57:./eeprom.h    **** #define XCALL "rcall"
+  58:./eeprom.h    **** #endif
+  59:./eeprom.h    **** 
+  60:./eeprom.h    **** // #include <avr/io.h>
+  61:./eeprom.h    **** #ifndef __EEPROM_REG_LOCATIONS__
+  62:./eeprom.h    **** /** \def __EEPROM_REG_LOCATIONS__
+  63:./eeprom.h    ****     \ingroup avr_eeprom
+  64:./eeprom.h    ****      In order to be able to work without a requiring a multilib 
+  65:./eeprom.h    ****      approach for dealing with controllers having the EEPROM registers
+  66:./eeprom.h    ****      at different positions in memory space, the eeprom functions evaluate
+  67:./eeprom.h    ****      __EEPROM_REG_LOCATIONS__: It is assumed to be defined by
+  68:./eeprom.h    ****      the device io header and contains 6 uppercase hex digits encoding the 
+  69:./eeprom.h    ****      addresses of EECR,EEDR and EEAR. 
+  70:./eeprom.h    ****      First two letters:  EECR address.
+  71:./eeprom.h    ****      Second two letters: EEDR address.
+  72:./eeprom.h    ****      Last two letters:   EEAR address.
+  73:./eeprom.h    ****      The default 1C1D1E corresponds to the
+  74:./eeprom.h    ****      register location that is valid for most controllers. The value
+  75:./eeprom.h    ****      of this define symbol is used for appending it to the base name of the
+  76:./eeprom.h    ****      assembler functions.  */
+  77:./eeprom.h    **** #define __EEPROM_REG_LOCATIONS__ 1C1D1E
+  78:./eeprom.h    **** #endif
+  79:./eeprom.h    **** #define _STR2(EXP) _STR1(EXP)
+  80:./eeprom.h    **** #define _STR1(EXP) #EXP
+  81:./eeprom.h    **** #define _REG_LOCATION_SUFFIX _STR2(__EEPROM_REG_LOCATIONS__)
+  82:./eeprom.h    **** 
+  83:./eeprom.h    **** #ifndef CR_TAB
+  84:./eeprom.h    **** #define CR_TAB "\n\t"
+  85:./eeprom.h    **** #endif
+  86:./eeprom.h    **** 
+  87:./eeprom.h    **** 
+  88:./eeprom.h    **** /** \defgroup avr_eeprom <avr/eeprom.h>: EEPROM handling
+  89:./eeprom.h    ****     \code #include <avr/eeprom.h> \endcode
+  90:./eeprom.h    **** 
+  91:./eeprom.h    ****     This header file declares the interface to some simple library
+  92:./eeprom.h    ****     routines suitable for handling the data EEPROM contained in the
+  93:./eeprom.h    ****     AVR microcontrollers.  The implementation uses a simple polled
+  94:./eeprom.h    ****     mode interface.  Applications that require interrupt-controlled
+  95:./eeprom.h    ****     EEPROM access to ensure that no time will be wasted in spinloops
+  96:./eeprom.h    ****     will have to deploy their own implementation.
+  97:./eeprom.h    **** 
+  98:./eeprom.h    ****     \note All of the read/write functions first make sure the EEPROM
+  99:./eeprom.h    ****      is ready to be accessed.  Since this may cause long delays if a
+ 100:./eeprom.h    ****      write operation is still pending, time-critical applications
+ 101:./eeprom.h    ****      should first poll the EEPROM e. g. using eeprom_is_ready() before
+ 102:./eeprom.h    ****      attempting any actual I/O.
+ 103:./eeprom.h    **** 
+ 104:./eeprom.h    ****     \note This header file declares inline functions that call the
+ 105:./eeprom.h    ****      assembler subroutines directly. This prevents that the compiler
+ 106:./eeprom.h    ****      generates push/pops for the call-clobbered registers. This way
+ 107:./eeprom.h    ****      also a specific calling convention could be used for the eeprom
+ 108:./eeprom.h    ****      routines e.g. by passing values in __tmp_reg__, eeprom addresses in
+ 109:./eeprom.h    ****      X and memory addresses in Z registers. Method is optimized for code 
+ 110:./eeprom.h    ****      size.
+ 111:./eeprom.h    **** 
+ 112:./eeprom.h    ****     \note Presently supported are two locations of the EEPROM register
+ 113:./eeprom.h    ****      set: 0x1F,0x20,0x21 and 0x1C,0x1D,0x1E 
+ 114:./eeprom.h    ****      (see ::__EEPROM_REG_LOCATIONS__).
+ 115:./eeprom.h    **** 
+ 116:./eeprom.h    ****     \note As these functions modify IO registers, they are known to be
+ 117:./eeprom.h    ****      non-reentrant.  If any of these functions are used from both,
+ 118:./eeprom.h    ****      standard and interrupt context, the applications must ensure
+ 119:./eeprom.h    ****      proper protection (e.g. by disabling interrupts before accessing
+ 120:./eeprom.h    ****      them).
+ 121:./eeprom.h    **** 
+ 122:./eeprom.h    **** */
+ 123:./eeprom.h    **** 
+ 124:./eeprom.h    **** 
+ 125:./eeprom.h    **** /* forward declarations of the inline functions so that doxygen does
+ 126:./eeprom.h    ****    not get confused by the attribute expression.  */
+ 127:./eeprom.h    **** 
+ 128:./eeprom.h    **** static inline uint8_t __attribute__ ((always_inline))
+ 129:./eeprom.h    **** eeprom_read_byte (const uint8_t *addr);
+ 130:./eeprom.h    **** 
+ 131:./eeprom.h    **** static inline uint16_t __attribute__ ((always_inline)) 
+ 132:./eeprom.h    **** eeprom_read_word (const uint16_t *addr);
+ 133:./eeprom.h    **** 
+ 134:./eeprom.h    **** static inline void __attribute__ ((always_inline))
+ 135:./eeprom.h    **** eeprom_read_block (void *pointer_ram,
+ 136:./eeprom.h    ****                    const void *pointer_eeprom,
+ 137:./eeprom.h    ****                    size_t size);
+ 138:./eeprom.h    **** 
+ 139:./eeprom.h    **** static inline void __attribute__ ((always_inline))
+ 140:./eeprom.h    **** eeprom_write_byte (uint8_t *addr,uint8_t value);
+ 141:./eeprom.h    **** 
+ 142:./eeprom.h    **** static inline void __attribute__ ((always_inline))
+ 143:./eeprom.h    **** eeprom_write_word (uint16_t *addr,uint16_t value);
+ 144:./eeprom.h    **** 
+ 145:./eeprom.h    **** static inline void __attribute__ ((always_inline))
+ 146:./eeprom.h    **** eeprom_write_block (const void *pointer_ram,
+ 147:./eeprom.h    ****                     void *pointer_eeprom,
+ 148:./eeprom.h    ****                     size_t size);
+ 149:./eeprom.h    **** 
+ 150:./eeprom.h    **** /** \name avr-libc declarations */
+ 151:./eeprom.h    **** 
+ 152:./eeprom.h    **** /*@{*/
+ 153:./eeprom.h    **** 
+ 154:./eeprom.h    **** /** \def EEMEM
+ 155:./eeprom.h    ****     \ingroup avr_eeprom
+ 156:./eeprom.h    ****     Attribute expression causing a variable to be allocated within the .eeprom
+ 157:./eeprom.h    ****      section.  */
+ 158:./eeprom.h    **** #define EEMEM __attribute__((section(".eeprom")))
+ 159:./eeprom.h    **** 
+ 160:./eeprom.h    **** /** \def eeprom_is_ready
+ 161:./eeprom.h    ****     \ingroup avr_eeprom
+ 162:./eeprom.h    ****     \returns 1 if EEPROM is ready for a new read/write operation, 0 if not. */
+ 163:./eeprom.h    **** 
+ 164:./eeprom.h    **** #if defined(__DOXYGEN__)
+ 165:./eeprom.h    **** # define eeprom_is_ready()
+ 166:./eeprom.h    **** #elif defined(EEWE)
+ 167:./eeprom.h    **** # define eeprom_is_ready() bit_is_clear(EECR, EEWE)
+ 168:./eeprom.h    **** #elif defined(EEPE)
+ 169:./eeprom.h    **** # define eeprom_is_ready() bit_is_clear(EECR, EEPE)
+ 170:./eeprom.h    **** #elif defined(DEECR) && defined(EEL)
+ 171:./eeprom.h    **** # define eeprom_is_ready() bit_is_clear(DEECR, EEL)
+ 172:./eeprom.h    **** #else
+ 173:./eeprom.h    **** # error "No write enable bit known for this device's EEPROM."
+ 174:./eeprom.h    **** #endif
+ 175:./eeprom.h    **** 
+ 176:./eeprom.h    **** /** \def eeprom_busy_wait
+ 177:./eeprom.h    ****     \ingroup avr_eeprom
+ 178:./eeprom.h    **** 
+ 179:./eeprom.h    ****     Loops until the eeprom is no longer busy.
+ 180:./eeprom.h    **** 
+ 181:./eeprom.h    ****     \returns Nothing. */
+ 182:./eeprom.h    **** 
+ 183:./eeprom.h    **** #define eeprom_busy_wait() do {} while (!eeprom_is_ready())
+ 184:./eeprom.h    **** 
+ 185:./eeprom.h    **** 
+ 186:./eeprom.h    **** /** \ingroup avr_eeprom
+ 187:./eeprom.h    ****     Read one byte from EEPROM address \c addr. */
+ 188:./eeprom.h    **** 
+ 189:./eeprom.h    **** uint8_t 
+ 190:./eeprom.h    **** eeprom_read_byte (const uint8_t *addr) 
+ 191:./eeprom.h    **** {
+ 192:./eeprom.h    ****   uint8_t result;
+ 193:./eeprom.h    ****   __asm__ __volatile__
+ 194:./eeprom.h    ****       ( XCALL " __eeprom_read_byte_" _REG_LOCATION_SUFFIX CR_TAB
+ 195:./eeprom.h    ****         "mov %1,__tmp_reg__"
+ 196:./eeprom.h    ****        : "+x" (addr),
+ 197:./eeprom.h    ****          "=r" (result)
+ 198:./eeprom.h    ****        : );
+ 199:./eeprom.h    ****   return result;
+ 200:./eeprom.h    **** }
+ 201:./eeprom.h    **** 
+ 202:./eeprom.h    **** /** \ingroup avr_eeprom
+ 203:./eeprom.h    ****     Read one 16-bit word (little endian) from EEPROM address \c addr. */
+ 204:./eeprom.h    **** uint16_t
+ 205:./eeprom.h    **** eeprom_read_word (const uint16_t *addr)
+ 206:./eeprom.h    **** {
+ 207:./eeprom.h    ****   uint16_t result;
+ 208:./eeprom.h    **** 
+ 209:./eeprom.h    ****   __asm__ __volatile__ (
+ 210:./eeprom.h    ****         XCALL " __eeprom_read_word_" _REG_LOCATION_SUFFIX CR_TAB
+ 211:./eeprom.h    ****        : "+x" (addr),
+ 212:./eeprom.h    ****          "=z" (result)
+ 213:./eeprom.h    ****        : );
+ 214:./eeprom.h    ****   return result;
+ 215:./eeprom.h    **** }
+ 216:./eeprom.h    **** 
+ 217:./eeprom.h    **** /** \ingroup avr_eeprom
+ 218:./eeprom.h    ****     Read a block of \c n bytes from EEPROM address \c pointer_eeprom to
+ 219:./eeprom.h    ****     \c pointer_ram.  For constant n <= 256 bytes a library function is used.
+ 220:./eeprom.h    ****     For block sizes unknown at compile time or block sizes > 256 an inline
+ 221:./eeprom.h    ****     loop is expanded. */
+ 222:./eeprom.h    **** 
+ 223:./eeprom.h    **** void 
+ 224:./eeprom.h    **** eeprom_read_block (void *pointer_ram,
+ 225:./eeprom.h    ****                    const void *pointer_eeprom,
+ 226:./eeprom.h    ****                    size_t n)
+ 227:./eeprom.h    **** {
+ 228:./eeprom.h    ****   if (!__builtin_constant_p (n)
+ 229:./eeprom.h    ****       || n > 256)
+ 230:./eeprom.h    ****     {
+ 231:./eeprom.h    ****       /* make sure size is a 16 bit variable.  */
+ 232:./eeprom.h    ****       uint16_t size = n; 
+ 233:./eeprom.h    **** 
+ 234:./eeprom.h    ****       __asm__ __volatile__ ( 
+ 235:./eeprom.h    ****             ".%=_start:" CR_TAB
+ 236:./eeprom.h    ****             "sbiw %2,1" CR_TAB
+ 237:./eeprom.h    ****             "brlt .%=_finished" CR_TAB
+ 238:./eeprom.h    ****              XCALL " __eeprom_read_byte_" _REG_LOCATION_SUFFIX CR_TAB
+ 239:./eeprom.h    ****             "st z+,__tmp_reg__" CR_TAB
+ 240:./eeprom.h    ****             "rjmp .%=_start" CR_TAB
+ 241:./eeprom.h    ****             ".%=_finished:" 
+ 242:./eeprom.h    ****           : "=x" (pointer_eeprom),
+ 243:./eeprom.h    ****             "=z" (pointer_ram),
+ 244:./eeprom.h    ****             "+w" (size)
+ 245:./eeprom.h    ****            : "x" (pointer_eeprom), 
+ 246:./eeprom.h    ****              "z" (pointer_ram)
+ 247:./eeprom.h    ****            : "memory");
+ 248:./eeprom.h    ****     }
+ 249:./eeprom.h    ****   else
+ 250:./eeprom.h    ****     {
+ 251:./eeprom.h    ****       if (n != 0)
+ 252:./eeprom.h    ****         {
+ 253:./eeprom.h    ****           if (n == 256)
+ 254:./eeprom.h    ****             {
+ 255:./eeprom.h    ****               __asm__ __volatile__ (
+ 256:./eeprom.h    ****                   XCALL " __eeprom_read_block_" _REG_LOCATION_SUFFIX 
+ 257:./eeprom.h    ****                 : "+x" (pointer_eeprom),
+ 258:./eeprom.h    ****                   "=z" (pointer_ram)
+ 259:./eeprom.h    ****                 : "z"  (pointer_ram)
+ 260:./eeprom.h    ****                 : "memory");
+ 261:./eeprom.h    ****             }
+ 262:./eeprom.h    ****           else
+ 263:./eeprom.h    ****             {
+ 264:./eeprom.h    ****               /* Needed in order to truncate to 8 bit.  */
+ 265:./eeprom.h    ****               uint8_t len;
+ 266:./eeprom.h    ****               len = (uint8_t) n; 
+ 267:./eeprom.h    **** 
+ 268:./eeprom.h    ****               __asm__ __volatile__ (
+ 269:./eeprom.h    ****                   "mov __zero_reg__,%2"      CR_TAB
+ 270:./eeprom.h    ****                    XCALL " __eeprom_read_block_" _REG_LOCATION_SUFFIX 
+ 271:./eeprom.h    ****                 : "+x" (pointer_eeprom),
+ 272:./eeprom.h    ****                   "=z" (pointer_ram)
+ 273:./eeprom.h    ****                 : "r"  (len),
+ 274:./eeprom.h    ****                   "z"  (pointer_ram)
+ 275:./eeprom.h    ****                 : "memory");
+ 276:./eeprom.h    ****             }
+ 277:./eeprom.h    ****         }
+ 278:./eeprom.h    ****     }
+ 279:./eeprom.h    **** }
+ 280:./eeprom.h    **** 
+ 281:./eeprom.h    **** /** \ingroup avr_eeprom
+ 282:./eeprom.h    ****     Write a byte \c value to EEPROM address \c addr. */
+ 283:./eeprom.h    **** 
+ 284:./eeprom.h    **** void 
+ 285:./eeprom.h    **** eeprom_write_byte (uint8_t *addr,uint8_t value)
+ 286:./eeprom.h    **** {
+ 287:./eeprom.h    ****   __asm__ __volatile__ (
+ 105               		.loc 2 287 0
+ 106               	/* #APP */
+ 107               	 ;  287 "./eeprom.h" 1
+ 108 006c 092E      		mov __tmp_reg__,r25
+ 109 006e 0E94 0000 		call __eeprom_write_byte_1F2021
+ 110               	 ;  0 "" 2
+ 111               	.LVL4:
+ 112               	/* #NOAPP */
+ 113               	.LBE11:
+ 114               	.LBE10:
+  99:usb/hid_task.c **** 			eeprom_write_byte((unsigned char *)PHRASELENGTH++,Usb_read_byte()); 
+ 115               		.loc 1 99 0
+ 116 0072 9091 F100 		lds r25,241
+ 117               	.LVL5:
+ 118 0076 A091 0000 		lds r26,PHRASELENGTH
+ 119 007a B091 0000 		lds r27,PHRASELENGTH+1
+ 120 007e 9D01      		movw r18,r26
+ 121 0080 2F5F      		subi r18,-1
+ 122 0082 3F4F      		sbci r19,-1
+ 123 0084 3093 0000 		sts PHRASELENGTH+1,r19
+ 124 0088 2093 0000 		sts PHRASELENGTH,r18
+ 125               	.LVL6:
+ 126               	.LBB12:
+ 127               	.LBB13:
+ 128               		.loc 2 287 0
+ 129               	/* #APP */
+ 130               	 ;  287 "./eeprom.h" 1
+ 131 008c 092E      		mov __tmp_reg__,r25
+ 132 008e 0E94 0000 		call __eeprom_write_byte_1F2021
+ 133               	 ;  0 "" 2
+ 134               	.LVL7:
+ 135               	/* #NOAPP */
+ 136               	.LBE13:
+ 137               	.LBE12:
+ 100:usb/hid_task.c **** 			eeprom_write_byte((unsigned char *)PHRASELENGTH++,Usb_read_byte()); 
+ 138               		.loc 1 100 0
+ 139 0092 9091 F100 		lds r25,241
+ 140               	.LVL8:
+ 141 0096 A091 0000 		lds r26,PHRASELENGTH
+ 142 009a B091 0000 		lds r27,PHRASELENGTH+1
+ 143 009e 9D01      		movw r18,r26
+ 144 00a0 2F5F      		subi r18,-1
+ 145 00a2 3F4F      		sbci r19,-1
+ 146 00a4 3093 0000 		sts PHRASELENGTH+1,r19
+ 147 00a8 2093 0000 		sts PHRASELENGTH,r18
+ 148               	.LVL9:
+ 149               	.LBB14:
+ 150               	.LBB15:
+ 151               		.loc 2 287 0
+ 152               	/* #APP */
+ 153               	 ;  287 "./eeprom.h" 1
+ 154 00ac 092E      		mov __tmp_reg__,r25
+ 155 00ae 0E94 0000 		call __eeprom_write_byte_1F2021
+ 156               	 ;  0 "" 2
+ 157               	.LVL10:
+ 158               	/* #NOAPP */
+ 159               	.LBE15:
+ 160               	.LBE14:
+ 101:usb/hid_task.c **** 			
+ 102:usb/hid_task.c **** 			if (!phrase_continues) 
+ 161               		.loc 1 102 0
+ 162 00b2 8111      		cpse r24,__zero_reg__
+ 163 00b4 00C0      		rjmp .L24
+ 164               	.LVL11:
+ 165               	.LBB16:
+ 166               	.LBB17:
+ 167               		.loc 2 287 0
+ 168 00b6 A091 0000 		lds r26,PHRASELENGTH
+ 169 00ba B091 0000 		lds r27,PHRASELENGTH+1
+ 170 00be 8FEF      		ldi r24,lo8(-1)
+ 171               	.LVL12:
+ 172               	/* #APP */
+ 173               	 ;  287 "./eeprom.h" 1
+ 174 00c0 082E      		mov __tmp_reg__,r24
+ 175 00c2 0E94 0000 		call __eeprom_write_byte_1F2021
+ 176               	 ;  0 "" 2
+ 177               	.LVL13:
+ 178               	/* #NOAPP */
+ 179               	.LBE17:
+ 180               	.LBE16:
+ 103:usb/hid_task.c **** 			{
+ 104:usb/hid_task.c **** 			    eeprom_write_byte((unsigned char *)PHRASELENGTH,0xFF);
+ 105:usb/hid_task.c **** 				Usb_ack_receive_out();
+ 181               		.loc 1 105 0
+ 182 00c6 8091 E800 		lds r24,232
+ 183 00ca 8B7F      		andi r24,lo8(-5)
+ 184 00cc 8093 E800 		sts 232,r24
+ 185 00d0 8091 E800 		lds r24,232
+ 186 00d4 8F77      		andi r24,lo8(127)
+ 187 00d6 8093 E800 		sts 232,r24
+ 106:usb/hid_task.c **** 				Usb_detach();
+ 188               		.loc 1 106 0
+ 189 00da 8091 E000 		lds r24,224
+ 190 00de 8160      		ori r24,lo8(1)
+ 191 00e0 8093 E000 		sts 224,r24
+ 107:usb/hid_task.c **** 				return(0);
+ 192               		.loc 1 107 0
+ 193 00e4 80E0      		ldi r24,0
+ 194 00e6 90E0      		ldi r25,0
+ 195 00e8 00C0      		rjmp .L4
+ 196               	.LVL14:
+ 197               	.L7:
+ 108:usb/hid_task.c **** 			}
+ 109:usb/hid_task.c **** 		 }
+ 110:usb/hid_task.c **** 		 else
+ 111:usb/hid_task.c **** 		 {
+ 112:usb/hid_task.c ****  		 led_number = Usb_read_byte()&0x0F;      //! ReportOut[1] is LED number (1..4)
+ 198               		.loc 1 112 0
+ 199 00ea 9091 F100 		lds r25,241
+ 200               	.LVL15:
+ 201 00ee 9F70      		andi r25,lo8(15)
+ 202               	.LVL16:
+ 113:usb/hid_task.c ****          switch (led_number)
+ 203               		.loc 1 113 0
+ 204 00f0 9230      		cpi r25,lo8(2)
+ 205 00f2 01F0      		breq .L10
+ 206 00f4 00F4      		brsh .L11
+ 207 00f6 9130      		cpi r25,lo8(1)
+ 208 00f8 01F0      		breq .L12
+ 209 00fa 00C0      		rjmp .L9
+ 210               	.L11:
+ 211 00fc 9330      		cpi r25,lo8(3)
+ 212 00fe 01F0      		breq .L13
+ 213 0100 9430      		cpi r25,lo8(4)
+ 214 0102 01F0      		breq .L14
+ 215 0104 00C0      		rjmp .L9
+ 216               	.L12:
+ 114:usb/hid_task.c ****          {
+ 115:usb/hid_task.c ****             case 1:
+ 116:usb/hid_task.c ****                if(led_state)
+ 217               		.loc 1 116 0
+ 218 0106 8823      		tst r24
+ 219 0108 01F0      		breq .L15
+ 117:usb/hid_task.c ****                {  Led0_off();   }
+ 220               		.loc 1 117 0
+ 221 010a 2898      		cbi 0x5,0
+ 222 010c 00C0      		rjmp .L9
+ 223               	.L15:
+ 118:usb/hid_task.c ****                else {Led0_on();}
+ 224               		.loc 1 118 0
+ 225 010e 289A      		sbi 0x5,0
+ 226 0110 00C0      		rjmp .L9
+ 227               	.L10:
+ 119:usb/hid_task.c ****                break;
+ 120:usb/hid_task.c ****             case 2:
+ 121:usb/hid_task.c ****                if(led_state)
+ 228               		.loc 1 121 0
+ 229 0112 8823      		tst r24
+ 230 0114 01F0      		breq .L16
+ 122:usb/hid_task.c ****                {  Led1_off();   }
+ 231               		.loc 1 122 0
+ 232 0116 2998      		cbi 0x5,1
+ 233 0118 00C0      		rjmp .L9
+ 234               	.L16:
+ 123:usb/hid_task.c ****                else {Led1_on();}
+ 235               		.loc 1 123 0
+ 236 011a 299A      		sbi 0x5,1
+ 237 011c 00C0      		rjmp .L9
+ 238               	.L13:
+ 124:usb/hid_task.c ****                break;
+ 125:usb/hid_task.c ****             case 3:
+ 126:usb/hid_task.c ****                if(led_state)
+ 239               		.loc 1 126 0
+ 240 011e 8823      		tst r24
+ 241 0120 01F0      		breq .L17
+ 127:usb/hid_task.c ****                {  Led2_off();   }
+ 242               		.loc 1 127 0
+ 243 0122 2A98      		cbi 0x5,2
+ 244 0124 00C0      		rjmp .L9
+ 245               	.L17:
+ 128:usb/hid_task.c ****                else {Led2_on();}
+ 246               		.loc 1 128 0
+ 247 0126 2A9A      		sbi 0x5,2
+ 248 0128 00C0      		rjmp .L9
+ 249               	.L14:
+ 129:usb/hid_task.c ****                break;
+ 130:usb/hid_task.c ****             case 4:
+ 131:usb/hid_task.c ****                if(led_state)
+ 250               		.loc 1 131 0
+ 251 012a 8823      		tst r24
+ 252 012c 01F0      		breq .L18
+ 132:usb/hid_task.c ****                {  Led3_off();   }
+ 253               		.loc 1 132 0
+ 254 012e 2B98      		cbi 0x5,3
+ 255 0130 00C0      		rjmp .L9
+ 256               	.L18:
+ 133:usb/hid_task.c ****                else {Led3_on();}
+ 257               		.loc 1 133 0
+ 258 0132 2B9A      		sbi 0x5,3
+ 259               	.L9:
+ 134:usb/hid_task.c ****                break;
+ 135:usb/hid_task.c ****          }
+ 136:usb/hid_task.c ****          GPIOR1 = Usb_read_byte();          //! not used
+ 260               		.loc 1 136 0
+ 261 0134 8091 F100 		lds r24,241
+ 262               	.LVL17:
+ 263 0138 8ABD      		out 0x2a,r24
+ 137:usb/hid_task.c ****          dummy  = Usb_read_byte();           //! In combinaisoon with nex byte allows
+ 264               		.loc 1 137 0
+ 265 013a 2091 F100 		lds r18,241
+ 266               	.LVL18:
+ 138:usb/hid_task.c ****          dummy2 = Usb_read_byte();          //! the host to send an enter DFU mode event
+ 267               		.loc 1 138 0
+ 268 013e 9091 F100 		lds r25,241
+ 269               	.LVL19:
+ 270 0142 00C0      		rjmp .L8
+ 271               	.LVL20:
+ 272               	.L24:
+  80:usb/hid_task.c ****    U8 joy;
+ 273               		.loc 1 80 0
+ 274 0144 90E0      		ldi r25,0
+ 275               	.LVL21:
+  79:usb/hid_task.c ****    U8 dummy2=0;
+ 276               		.loc 1 79 0
+ 277 0146 20E0      		ldi r18,0
+ 278               	.LVL22:
+ 279               	.L8:
+ 139:usb/hid_task.c **** 		 }
+ 140:usb/hid_task.c ****          Usb_ack_receive_out();
+ 280               		.loc 1 140 0
+ 281 0148 8091 E800 		lds r24,232
+ 282 014c 8B7F      		andi r24,lo8(-5)
+ 283 014e 8093 E800 		sts 232,r24
+ 284 0152 8091 E800 		lds r24,232
+ 285 0156 8F77      		andi r24,lo8(127)
+ 286 0158 8093 E800 		sts 232,r24
+ 141:usb/hid_task.c ****       }
+ 142:usb/hid_task.c **** 
+ 143:usb/hid_task.c ****       if(dummy==0x55 && dummy2==0xAA)     //! Check if we received DFU mode command from host
+ 287               		.loc 1 143 0
+ 288 015c 2535      		cpi r18,lo8(85)
+ 289 015e 01F4      		brne .L6
+ 290               		.loc 1 143 0 is_stmt 0 discriminator 1
+ 291 0160 9A3A      		cpi r25,lo8(-86)
+ 292 0162 01F4      		brne .L6
+ 144:usb/hid_task.c ****       {
+ 145:usb/hid_task.c ****          Leds_off();
+ 293               		.loc 1 145 0 is_stmt 1
+ 294 0164 8FE7      		ldi r24,lo8(127)
+ 295 0166 85B9      		out 0x5,r24
+ 146:usb/hid_task.c ****          Usb_detach();                    //! Detach actual generic HID application
+ 296               		.loc 1 146 0
+ 297 0168 8091 E000 		lds r24,224
+ 298 016c 8160      		ori r24,lo8(1)
+ 299 016e 8093 E000 		sts 224,r24
+ 147:usb/hid_task.c ****          for(tempo=0;tempo<70000;tempo++);//! Wait some time before
+ 300               		.loc 1 147 0
+ 301 0172 1982      		std Y+1,__zero_reg__
+ 302 0174 1A82      		std Y+2,__zero_reg__
+ 303 0176 1B82      		std Y+3,__zero_reg__
+ 304 0178 1C82      		std Y+4,__zero_reg__
+ 305               	.LVL23:
+ 306               	.L20:
+ 307               		.loc 1 147 0 is_stmt 0 discriminator 1
+ 308 017a 8981      		ldd r24,Y+1
+ 309 017c 9A81      		ldd r25,Y+2
+ 310 017e AB81      		ldd r26,Y+3
+ 311 0180 BC81      		ldd r27,Y+4
+ 312 0182 8037      		cpi r24,112
+ 313 0184 9141      		sbci r25,17
+ 314 0186 A140      		sbci r26,1
+ 315 0188 B105      		cpc r27,__zero_reg__
+ 316 018a 00F4      		brsh .L32
+ 317               		.loc 1 147 0 discriminator 3
+ 318 018c 8981      		ldd r24,Y+1
+ 319 018e 9A81      		ldd r25,Y+2
+ 320 0190 AB81      		ldd r26,Y+3
+ 321 0192 BC81      		ldd r27,Y+4
+ 322 0194 0196      		adiw r24,1
+ 323 0196 A11D      		adc r26,__zero_reg__
+ 324 0198 B11D      		adc r27,__zero_reg__
+ 325 019a 8983      		std Y+1,r24
+ 326 019c 9A83      		std Y+2,r25
+ 327 019e AB83      		std Y+3,r26
+ 328 01a0 BC83      		std Y+4,r27
+ 329 01a2 00C0      		rjmp .L20
+ 330               	.L32:
+ 148:usb/hid_task.c ****          (*start_bootloader)();           //! Jumping to booltoader
+ 331               		.loc 1 148 0 is_stmt 1
+ 332 01a4 E091 0000 		lds r30,start_bootloader
+ 333 01a8 F091 0000 		lds r31,start_bootloader+1
+ 334 01ac 0995      		icall
+ 335               	.LVL24:
+ 336               	.L6:
+ 149:usb/hid_task.c ****       }
+ 150:usb/hid_task.c **** 
+ 151:usb/hid_task.c ****       joy=0;                              //! Now we build the Joytick information
+ 152:usb/hid_task.c ****       if(Is_joy_up()|| Is_joy_down() || Is_joy_right() || Is_joy_left() )                     //! C
+ 337               		.loc 1 152 0
+ 338 01ae 4D9B      		sbis 0x9,5
+ 339 01b0 00C0      		rjmp .L26
+ 340               		.loc 1 152 0 is_stmt 0 discriminator 2
+ 341 01b2 4F9B      		sbis 0x9,7
+ 342 01b4 00C0      		rjmp .L26
+ 343               		.loc 1 152 0 discriminator 4
+ 344 01b6 89B1      		in r24,0x9
+ 345 01b8 86FB      		bst r24,6
+ 346 01ba 9927      		clr r25
+ 347 01bc 90F9      		bld r25,0
+ 348 01be 81E0      		ldi r24,lo8(1)
+ 349 01c0 8927      		eor r24,r25
+ 350 01c2 00C0      		rjmp .L22
+ 351               	.L26:
+ 153:usb/hid_task.c ****       {
+ 154:usb/hid_task.c ****         joy=0x01;
+ 352               		.loc 1 154 0 is_stmt 1
+ 353 01c4 81E0      		ldi r24,lo8(1)
+ 354               	.L22:
+ 355               	.LVL25:
+ 155:usb/hid_task.c ****       }
+ 156:usb/hid_task.c ****       Usb_select_endpoint(EP_HID_IN);     //! Ready to send these information to the host applicati
+ 356               		.loc 1 156 0
+ 357 01c6 91E0      		ldi r25,lo8(1)
+ 358 01c8 9093 E900 		sts 233,r25
+ 157:usb/hid_task.c ****       if(Is_usb_write_enabled())
+ 359               		.loc 1 157 0
+ 360 01cc 9091 E800 		lds r25,232
+ 361 01d0 95FF      		sbrs r25,5
+ 362 01d2 00C0      		rjmp .L30
+ 158:usb/hid_task.c ****       {
+ 159:usb/hid_task.c ****          if(joy!=last_joy)
+ 363               		.loc 1 159 0
+ 364 01d4 9091 0000 		lds r25,last_joy
+ 365 01d8 8917      		cp r24,r25
+ 366 01da 01F0      		breq .L30
+ 160:usb/hid_task.c ****          {
+ 161:usb/hid_task.c ****             Usb_write_byte(joy);
+ 367               		.loc 1 161 0
+ 368 01dc 8093 F100 		sts 241,r24
+ 162:usb/hid_task.c ****             Usb_write_byte(GPIOR1);           //! Dummy (not used)
+ 369               		.loc 1 162 0
+ 370 01e0 9AB5      		in r25,0x2a
+ 371 01e2 9093 F100 		sts 241,r25
+ 163:usb/hid_task.c ****             Usb_write_byte(GPIOR1);           //! Dummy (not used)
+ 372               		.loc 1 163 0
+ 373 01e6 9AB5      		in r25,0x2a
+ 374 01e8 9093 F100 		sts 241,r25
+ 164:usb/hid_task.c ****             Usb_write_byte(GPIOR1);           //! Dummy (not used)
+ 375               		.loc 1 164 0
+ 376 01ec 9AB5      		in r25,0x2a
+ 377 01ee 9093 F100 		sts 241,r25
+ 165:usb/hid_task.c ****             Usb_write_byte(GPIOR1);           //! Dummy (not used)
+ 378               		.loc 1 165 0
+ 379 01f2 9AB5      		in r25,0x2a
+ 380 01f4 9093 F100 		sts 241,r25
+ 166:usb/hid_task.c ****             Usb_write_byte(GPIOR1);           //! Dummy (not used)
+ 381               		.loc 1 166 0
+ 382 01f8 9AB5      		in r25,0x2a
+ 383 01fa 9093 F100 		sts 241,r25
+ 167:usb/hid_task.c ****             Usb_write_byte(GPIOR1);           //! Dummy (not used)
+ 384               		.loc 1 167 0
+ 385 01fe 9AB5      		in r25,0x2a
+ 386 0200 9093 F100 		sts 241,r25
+ 168:usb/hid_task.c ****             Usb_write_byte(GPIOR1);           //! Dummy (not used)
+ 387               		.loc 1 168 0
+ 388 0204 9AB5      		in r25,0x2a
+ 389 0206 9093 F100 		sts 241,r25
+ 169:usb/hid_task.c ****             Usb_ack_in_ready();               //! Send data over the USB
+ 390               		.loc 1 169 0
+ 391 020a 9091 E800 		lds r25,232
+ 392 020e 9E7F      		andi r25,lo8(-2)
+ 393 0210 9093 E800 		sts 232,r25
+ 394 0214 9091 E800 		lds r25,232
+ 395 0218 9F77      		andi r25,lo8(127)
+ 396 021a 9093 E800 		sts 232,r25
+ 170:usb/hid_task.c ****             last_joy=joy;
+ 397               		.loc 1 170 0
+ 398 021e 8093 0000 		sts last_joy,r24
+ 399               	.LVL26:
+ 400               	.L30:
+ 171:usb/hid_task.c ****          }
+ 172:usb/hid_task.c ****       }
+ 173:usb/hid_task.c ****     }
+ 174:usb/hid_task.c **** 	return(1);
+ 401               		.loc 1 174 0
+ 402 0222 81E0      		ldi r24,lo8(1)
+ 403 0224 90E0      		ldi r25,0
+ 404               	.L4:
+ 405               	/* epilogue start */
+ 175:usb/hid_task.c **** }
+ 406               		.loc 1 175 0
+ 407 0226 0F90      		pop __tmp_reg__
+ 408 0228 0F90      		pop __tmp_reg__
+ 409 022a 0F90      		pop __tmp_reg__
+ 410 022c 0F90      		pop __tmp_reg__
+ 411 022e DF91      		pop r29
+ 412 0230 CF91      		pop r28
+ 413 0232 0895      		ret
+ 414               		.cfi_endproc
+ 415               	.LFE8:
+ 417               	.global	sof_action
+ 419               	sof_action:
+ 420               	.LFB9:
+ 176:usb/hid_task.c **** 
+ 177:usb/hid_task.c **** //! @brief sof_action
+ 178:usb/hid_task.c **** //!
+ 179:usb/hid_task.c **** //! This function increments the cpt_sof counter each times
+ 180:usb/hid_task.c **** //! the USB Start Of Frame interrupt subroutine is executed (1ms)
+ 181:usb/hid_task.c **** //! Usefull to manage time delays
+ 182:usb/hid_task.c **** //!
+ 183:usb/hid_task.c **** //! @warning Code:?? bytes (function code length)
+ 184:usb/hid_task.c **** //!
+ 185:usb/hid_task.c **** //! @param none
+ 186:usb/hid_task.c **** //!
+ 187:usb/hid_task.c **** //! @return none
+ 188:usb/hid_task.c **** void sof_action()
+ 189:usb/hid_task.c **** {
+ 421               		.loc 1 189 0
+ 422               		.cfi_startproc
+ 423               	/* prologue: function */
+ 424               	/* frame size = 0 */
+ 425               	/* stack size = 0 */
+ 426               	.L__stack_usage = 0
+ 190:usb/hid_task.c ****    cpt_sof++;
+ 427               		.loc 1 190 0
+ 428 0234 8091 0000 		lds r24,cpt_sof
+ 429 0238 8F5F      		subi r24,lo8(-(1))
+ 430 023a 8093 0000 		sts cpt_sof,r24
+ 431 023e 0895      		ret
+ 432               		.cfi_endproc
+ 433               	.LFE9:
+ 435               	.global	start_bootloader
+ 436               		.data
+ 439               	start_bootloader:
+ 440 0000 00F0      		.word	-4096
+ 441               	.global	last_joy
+ 442               		.section .bss
+ 445               	last_joy:
+ 446 0000 00        		.zero	1
+ 447               	.global	cpt_sof
+ 450               	cpt_sof:
+ 451 0001 00        		.zero	1
+ 452               		.text
+ 453               	.Letext0:
+ 454               		.file 3 "./conf/compiler.h"
+ 455               		.file 4 "c:\\program files (x86)\\arduino\\hardware\\tools\\avr\\avr\\include\\stdint.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 hid_task.c
+C:\Users\chris\AppData\Local\Temp\ccKEayHh.s:2      *ABS*:0000003e __SP_H__
+C:\Users\chris\AppData\Local\Temp\ccKEayHh.s:3      *ABS*:0000003d __SP_L__
+C:\Users\chris\AppData\Local\Temp\ccKEayHh.s:4      *ABS*:0000003f __SREG__
+C:\Users\chris\AppData\Local\Temp\ccKEayHh.s:5      *ABS*:00000000 __tmp_reg__
+C:\Users\chris\AppData\Local\Temp\ccKEayHh.s:6      *ABS*:00000001 __zero_reg__
+C:\Users\chris\AppData\Local\Temp\ccKEayHh.s:12     .text:00000000 hid_task_init
+C:\Users\chris\AppData\Local\Temp\ccKEayHh.s:44     .text:0000001e hid_task
+C:\Users\chris\AppData\Local\Temp\ccKEayHh.s:439    .data:00000000 start_bootloader
+C:\Users\chris\AppData\Local\Temp\ccKEayHh.s:445    .bss:00000000 last_joy
+C:\Users\chris\AppData\Local\Temp\ccKEayHh.s:419    .text:00000234 sof_action
+C:\Users\chris\AppData\Local\Temp\ccKEayHh.s:450    .bss:00000001 cpt_sof
+
+UNDEFINED SYMBOLS
+usb_configuration_nb
+PHRASELENGTH
+__eeprom_write_byte_1F2021
+__do_copy_data
+__do_clear_bss

@@ -1,0 +1,86 @@
+Microsoft Windows XP
+====================
+
+eStick USB Device Driver Installation
+-------------------------------------
+
+Following this installation of the eStickFlashtool the next steps are
+the installation and registration of the libusb driver in order to 
+enable communication between the eStickFlashtool on the PC under 
+MS Windows and the AT90USB162 microcontroller on the eStick. Therefore,
+carefully follow the next steps:
+
+1) Hold the button on the eStick pressed while plugging the eStick to
+one of the available USB ports on your computer. The device manager
+launches and notifies you in the system tray at the right bottom of your
+desktop that a new device has been found.
+
+2) In the welcome dialog of the device driver wizard select the first
+item "Yes, only this time (Ja, nur dieses eine Mal)" and click on 
+"Next > (Weiter >)".
+
+3) In the following dialog choose the second item "Install software from
+a list ... (Software von einer Liste oder betsimmten Quelle 
+installieren ...)" and click "Next > (Weiter >)".
+
+4) In the third dialog window point the wizard to the directory where 
+you have installed the eStickFlashtool, in particular, to the driver
+subdirectory, e.g.: "C:\eStick\eStickFlashtool\driver".
+
+5) The wizard will complain in the final dialog, that the driver does
+not come along with a signature from Microsoft. You may safely ignore
+this complaint, select "eStick" and click on "Next > (Weiter >)". The 
+driver will be installed.
+
+6) Launch the eStickFlashtool via the menu, select from the menu "File"
+>> "Open" and choose a *.hex file from the "hexfiles" subfolder, e.g.
+"C:\eStick\eStickFlashtool\hexfiles\blinky.hex". Leave the "Erase, 
+Program and Verify" items in the right pane marked and click on FLASH.
+When everything works as intended you should see a message "Verify 
+successful ..." in the status bar.
+
+7) Click the START button to start the application that was programmed 
+to the eStick. When you have choosen blinky.hex before one Led shall 
+blink. YOu may unplug the eStick from the USB port and power it via a 
+9V battery block or re-plug it to the USB port once more, this time,
+however without holding the button pressed. As soon as the eStick gets
+it's power supply the programmed appplication will execute.
+
+Every time you want to program/flash a new application to the eStick
+unplug and re-plug the eStick while holding the button pressed and 
+perform the above steps 6 and 7.
+
+Linux / Unix
+============
+
+Prerequisities:
+---------------
+Install the following packages with the package management tool 
+provided by your Linux / Unix distribution, in particular, the 
+following packages are required:
+* gcc-4.3-39.1 or above
+* libusb-devel-0.1.12-110.1 or above
+* gtk2-devel-2.12.9-37.1 or above
+
+You may check whether these packages are present for instance with
+rpm -qa | grep gcc
+rpm -qa | grep libusb
+rpm -qa | grep gtk
+
+Installation:
+-------------
+Extract and compile the source code, for instance, via
+
+tar xvfz eStickFlashTool_v0.1.tgz
+cd eStickFlashTool
+make
+
+Copy the program to a location of your convenience, e.g., ~/bin or 
+/usr/local/bin (the latter requires root privileges).
+
+Launch the program as root via
+
+eStickFlashTool
+
+
+Martin Horauer, Vienna 2008

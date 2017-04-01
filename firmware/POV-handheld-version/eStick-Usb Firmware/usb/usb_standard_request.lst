@@ -1,0 +1,1411 @@
+   1               		.file	"usb_standard_request.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               	.global	usb_process_request
+  12               	usb_process_request:
+  13               	.LFB1:
+  14               		.file 1 "usb/usb_standard_request.c"
+   1:usb/usb_standard_request.c **** //! @file usb_standard_request.c,v
+   2:usb/usb_standard_request.c **** //!
+   3:usb/usb_standard_request.c **** //! Copyright (c) 2004 Atmel.
+   4:usb/usb_standard_request.c **** //!
+   5:usb/usb_standard_request.c **** //! Use of this program is subject to Atmel's End User License Agreement.
+   6:usb/usb_standard_request.c **** //! Please read file license.txt for copyright notice.
+   7:usb/usb_standard_request.c **** //!
+   8:usb/usb_standard_request.c **** //! @brief Process USB device enumeration requests.
+   9:usb/usb_standard_request.c **** //!
+  10:usb/usb_standard_request.c **** //! This file contains the USB endpoint 0 management routines corresponding to
+  11:usb/usb_standard_request.c **** //! the standard enumeration process (refer to chapter 9 of the USB
+  12:usb/usb_standard_request.c **** //! specification.
+  13:usb/usb_standard_request.c **** //! This file calls routines of the usb_specific_request.c file for non-standard
+  14:usb/usb_standard_request.c **** //! request management.
+  15:usb/usb_standard_request.c **** //! The enumeration parameters (descriptor tables) are contained in the
+  16:usb/usb_standard_request.c **** //! usb_descriptors.c file.
+  17:usb/usb_standard_request.c **** //!
+  18:usb/usb_standard_request.c **** //! @version 1.8 at90usb162-hidgen-1_0_1 $Id: usb_standard_request.c,v 1.8 2006/11/30 15:07:56 arob
+  19:usb/usb_standard_request.c **** //!
+  20:usb/usb_standard_request.c **** //! @todo
+  21:usb/usb_standard_request.c **** //! @bug
+  22:usb/usb_standard_request.c **** 
+  23:usb/usb_standard_request.c **** //_____ I N C L U D E S ____________________________________________________
+  24:usb/usb_standard_request.c **** 
+  25:usb/usb_standard_request.c **** #include "config.h"
+  26:usb/usb_standard_request.c **** #include "conf_usb.h"
+  27:usb/usb_standard_request.c **** #include "usb_drv.h"
+  28:usb/usb_standard_request.c **** #include "usb_descriptors.h"
+  29:usb/usb_standard_request.c **** #include "usb_standard_request.h"
+  30:usb/usb_standard_request.c **** #include "usb_specific_request.h"
+  31:usb/usb_standard_request.c **** 
+  32:usb/usb_standard_request.c **** 
+  33:usb/usb_standard_request.c **** //_____ M A C R O S ________________________________________________________
+  34:usb/usb_standard_request.c **** 
+  35:usb/usb_standard_request.c **** 
+  36:usb/usb_standard_request.c **** //_____ D E F I N I T I O N ________________________________________________
+  37:usb/usb_standard_request.c **** 
+  38:usb/usb_standard_request.c **** //_____ P R I V A T E   D E C L A R A T I O N ______________________________
+  39:usb/usb_standard_request.c **** 
+  40:usb/usb_standard_request.c **** static  void    usb_get_descriptor(   void);
+  41:usb/usb_standard_request.c **** static  void    usb_set_address(      void);
+  42:usb/usb_standard_request.c **** static  void    usb_set_configuration(void);
+  43:usb/usb_standard_request.c **** static  void    usb_clear_feature(    void);
+  44:usb/usb_standard_request.c **** static  void    usb_set_feature(      void);
+  45:usb/usb_standard_request.c **** static  void    usb_get_status(       void);
+  46:usb/usb_standard_request.c **** static  void    usb_get_configuration(void);
+  47:usb/usb_standard_request.c **** static  void    usb_get_interface (void);
+  48:usb/usb_standard_request.c **** static  void    usb_set_interface (void);
+  49:usb/usb_standard_request.c **** 
+  50:usb/usb_standard_request.c **** 
+  51:usb/usb_standard_request.c **** 
+  52:usb/usb_standard_request.c **** 
+  53:usb/usb_standard_request.c **** 
+  54:usb/usb_standard_request.c **** //_____ D E C L A R A T I O N ______________________________________________
+  55:usb/usb_standard_request.c **** 
+  56:usb/usb_standard_request.c **** static  bit  zlp;
+  57:usb/usb_standard_request.c **** static  U8   endpoint_status[NB_ENDPOINTS];
+  58:usb/usb_standard_request.c **** static  U8   device_status=DEVICE_STATUS;
+  59:usb/usb_standard_request.c **** 
+  60:usb/usb_standard_request.c **** #ifdef AVRGCC
+  61:usb/usb_standard_request.c ****         PGM_VOID_P pbuffer;
+  62:usb/usb_standard_request.c **** #else
+  63:usb/usb_standard_request.c ****         U8   code *pbuffer;
+  64:usb/usb_standard_request.c **** #endif
+  65:usb/usb_standard_request.c ****         U8   data_to_transfer;
+  66:usb/usb_standard_request.c **** 
+  67:usb/usb_standard_request.c ****         U16  wInterface;
+  68:usb/usb_standard_request.c **** 
+  69:usb/usb_standard_request.c **** static  U8   bmRequestType;
+  70:usb/usb_standard_request.c **** 
+  71:usb/usb_standard_request.c ****         U8   usb_configuration_nb;
+  72:usb/usb_standard_request.c **** extern  bit     usb_connected;
+  73:usb/usb_standard_request.c **** extern  code    S_usb_device_descriptor             usb_user_device_descriptor;
+  74:usb/usb_standard_request.c **** extern  code    S_usb_user_configuration_descriptor usb_user_configuration_descriptor;
+  75:usb/usb_standard_request.c **** 
+  76:usb/usb_standard_request.c **** U8      usb_remote_wup_feature;  // Store ENABLED value if a SetFeature(RemoteWakeUp) has been rece
+  77:usb/usb_standard_request.c **** 
+  78:usb/usb_standard_request.c **** 
+  79:usb/usb_standard_request.c **** //! usb_process_request.
+  80:usb/usb_standard_request.c **** //!
+  81:usb/usb_standard_request.c **** //! @brief This function reads the SETUP request sent to the default control endpoint
+  82:usb/usb_standard_request.c **** //! and calls the appropriate function. When exiting of the usb_read_request
+  83:usb/usb_standard_request.c **** //! function, the device is ready to manage the next request.
+  84:usb/usb_standard_request.c **** //!
+  85:usb/usb_standard_request.c **** //! @param none
+  86:usb/usb_standard_request.c **** //!
+  87:usb/usb_standard_request.c **** //! @return none
+  88:usb/usb_standard_request.c **** //! @note list of supported requests:
+  89:usb/usb_standard_request.c **** //! GET_DESCRIPTOR
+  90:usb/usb_standard_request.c **** //! GET_CONFIGURATION
+  91:usb/usb_standard_request.c **** //! SET_ADDRESS
+  92:usb/usb_standard_request.c **** //! SET_CONFIGURATION
+  93:usb/usb_standard_request.c **** //! CLEAR_FEATURE
+  94:usb/usb_standard_request.c **** //! SET_FEATURE
+  95:usb/usb_standard_request.c **** //! GET_STATUS
+  96:usb/usb_standard_request.c **** //!
+  97:usb/usb_standard_request.c **** void usb_process_request(void)
+  98:usb/usb_standard_request.c **** {
+  15               		.loc 1 98 0
+  16               		.cfi_startproc
+  17 0000 CF93      		push r28
+  18               	.LCFI0:
+  19               		.cfi_def_cfa_offset 3
+  20               		.cfi_offset 28, -2
+  21 0002 DF93      		push r29
+  22               	.LCFI1:
+  23               		.cfi_def_cfa_offset 4
+  24               		.cfi_offset 29, -3
+  25 0004 00D0      		rcall .
+  26               	.LCFI2:
+  27               		.cfi_def_cfa_offset 6
+  28 0006 CDB7      		in r28,__SP_L__
+  29 0008 DEB7      		in r29,__SP_H__
+  30               	.LCFI3:
+  31               		.cfi_def_cfa_register 28
+  32               	/* prologue: function */
+  33               	/* frame size = 2 */
+  34               	/* stack size = 4 */
+  35               	.L__stack_usage = 4
+  99:usb/usb_standard_request.c ****    U8  bmRequest;
+ 100:usb/usb_standard_request.c **** 
+ 101:usb/usb_standard_request.c ****    UEINTX &= ~(1<<RXOUTI);
+  36               		.loc 1 101 0
+  37 000a 8091 E800 		lds r24,232
+  38 000e 8B7F      		andi r24,lo8(-5)
+  39 0010 8093 E800 		sts 232,r24
+ 102:usb/usb_standard_request.c **** 
+ 103:usb/usb_standard_request.c ****    bmRequestType = Usb_read_byte();
+  40               		.loc 1 103 0
+  41 0014 8091 F100 		lds r24,241
+  42 0018 8093 0000 		sts bmRequestType,r24
+ 104:usb/usb_standard_request.c ****    bmRequest     = Usb_read_byte();
+  43               		.loc 1 104 0
+  44 001c 9091 F100 		lds r25,241
+  45               	.LVL0:
+ 105:usb/usb_standard_request.c **** 
+ 106:usb/usb_standard_request.c ****    switch (bmRequest)
+  46               		.loc 1 106 0
+  47 0020 492F      		mov r20,r25
+  48 0022 50E0      		ldi r21,0
+  49 0024 4C30      		cpi r20,12
+  50 0026 5105      		cpc r21,__zero_reg__
+  51 0028 00F0      		brlo .+2
+  52 002a 00C0      		rjmp .L2
+  53 002c FA01      		movw r30,r20
+  54 002e E050      		subi r30,lo8(-(gs(.L4)))
+  55 0030 F040      		sbci r31,hi8(-(gs(.L4)))
+  56 0032 0C94 0000 		jmp __tablejump2__
+  57               	.LVL1:
+  58               		.section	.progmem.gcc_sw_table,"a",@progbits
+  59               		.p2align	1
+  60               	.L4:
+  61 0000 0000      		.word gs(.L3)
+  62 0002 0000      		.word gs(.L5)
+  63 0004 0000      		.word gs(.L2)
+  64 0006 0000      		.word gs(.L6)
+  65 0008 0000      		.word gs(.L2)
+  66 000a 0000      		.word gs(.L7)
+  67 000c 0000      		.word gs(.L8)
+  68 000e 0000      		.word gs(.L2)
+  69 0010 0000      		.word gs(.L9)
+  70 0012 0000      		.word gs(.L10)
+  71 0014 0000      		.word gs(.L11)
+  72 0016 0000      		.word gs(.L12)
+  73               		.text
+  74               	.L8:
+ 107:usb/usb_standard_request.c ****    {
+ 108:usb/usb_standard_request.c ****     case GET_DESCRIPTOR:
+ 109:usb/usb_standard_request.c ****          if (0x80 == bmRequestType) { usb_get_descriptor(); }
+  75               		.loc 1 109 0
+  76 0036 8038      		cpi r24,lo8(-128)
+  77 0038 01F0      		breq .+2
+  78 003a 00C0      		rjmp .L13
+  79               	.LBB21:
+  80               	.LBB22:
+ 110:usb/usb_standard_request.c ****          else                       { usb_user_read_request(bmRequestType, bmRequest); }
+ 111:usb/usb_standard_request.c ****          break;
+ 112:usb/usb_standard_request.c **** 
+ 113:usb/usb_standard_request.c ****     case GET_CONFIGURATION:
+ 114:usb/usb_standard_request.c ****          if (0x80 == bmRequestType) { usb_get_configuration(); }
+ 115:usb/usb_standard_request.c ****          else                       { usb_user_read_request(bmRequestType, bmRequest); }
+ 116:usb/usb_standard_request.c ****          break;
+ 117:usb/usb_standard_request.c **** 
+ 118:usb/usb_standard_request.c ****     case SET_ADDRESS:
+ 119:usb/usb_standard_request.c ****          if (0x00 == bmRequestType) { usb_set_address(); }
+ 120:usb/usb_standard_request.c ****          else                       { usb_user_read_request(bmRequestType, bmRequest); }
+ 121:usb/usb_standard_request.c ****          break;
+ 122:usb/usb_standard_request.c **** 
+ 123:usb/usb_standard_request.c ****     case SET_CONFIGURATION:
+ 124:usb/usb_standard_request.c ****          if (0x00 == bmRequestType) { usb_set_configuration(); }
+ 125:usb/usb_standard_request.c ****          else                       { usb_user_read_request(bmRequestType, bmRequest); }
+ 126:usb/usb_standard_request.c ****          break;
+ 127:usb/usb_standard_request.c **** 
+ 128:usb/usb_standard_request.c ****     case CLEAR_FEATURE:
+ 129:usb/usb_standard_request.c ****          if (0x02 >= bmRequestType) { usb_clear_feature(); }
+ 130:usb/usb_standard_request.c ****          else                       { usb_user_read_request(bmRequestType, bmRequest); }
+ 131:usb/usb_standard_request.c ****          break;
+ 132:usb/usb_standard_request.c **** 
+ 133:usb/usb_standard_request.c ****     case SET_FEATURE:
+ 134:usb/usb_standard_request.c ****          if (0x02 >= bmRequestType) { usb_set_feature(); }
+ 135:usb/usb_standard_request.c ****          else                       { usb_user_read_request(bmRequestType, bmRequest); }
+ 136:usb/usb_standard_request.c ****          break;
+ 137:usb/usb_standard_request.c **** 
+ 138:usb/usb_standard_request.c ****     case GET_STATUS:
+ 139:usb/usb_standard_request.c ****          if ((0x7F < bmRequestType) & (0x82 >= bmRequestType))
+ 140:usb/usb_standard_request.c ****                                     { usb_get_status(); }
+ 141:usb/usb_standard_request.c ****          else                       { usb_user_read_request(bmRequestType, bmRequest); }
+ 142:usb/usb_standard_request.c ****          break;
+ 143:usb/usb_standard_request.c **** 
+ 144:usb/usb_standard_request.c ****     case GET_INTERFACE:
+ 145:usb/usb_standard_request.c ****           if (bmRequestType == 0x81) { usb_get_interface(); }
+ 146:usb/usb_standard_request.c ****           else { usb_user_read_request(bmRequestType, bmRequest); }
+ 147:usb/usb_standard_request.c ****           break;
+ 148:usb/usb_standard_request.c **** 
+ 149:usb/usb_standard_request.c **** 
+ 150:usb/usb_standard_request.c ****     case SET_INTERFACE:
+ 151:usb/usb_standard_request.c ****       if (bmRequestType == 0x01) {usb_set_interface();}
+ 152:usb/usb_standard_request.c ****       break;
+ 153:usb/usb_standard_request.c **** 
+ 154:usb/usb_standard_request.c ****     case SET_DESCRIPTOR:
+ 155:usb/usb_standard_request.c ****     case SYNCH_FRAME:
+ 156:usb/usb_standard_request.c ****     default: //!< un-supported request => call to user read request
+ 157:usb/usb_standard_request.c ****          if(usb_user_read_request(bmRequestType, bmRequest) == FALSE)
+ 158:usb/usb_standard_request.c ****          {
+ 159:usb/usb_standard_request.c ****             Usb_enable_stall_handshake();
+ 160:usb/usb_standard_request.c ****             Usb_ack_receive_setup();
+ 161:usb/usb_standard_request.c ****             return;
+ 162:usb/usb_standard_request.c ****          }
+ 163:usb/usb_standard_request.c ****          break;
+ 164:usb/usb_standard_request.c ****   }
+ 165:usb/usb_standard_request.c **** }
+ 166:usb/usb_standard_request.c **** 
+ 167:usb/usb_standard_request.c **** 
+ 168:usb/usb_standard_request.c **** //! usb_set_address.
+ 169:usb/usb_standard_request.c **** //!
+ 170:usb/usb_standard_request.c **** //! This function manages the SET ADDRESS request. When complete, the device
+ 171:usb/usb_standard_request.c **** //! will filter the requests using the new address.
+ 172:usb/usb_standard_request.c **** //!
+ 173:usb/usb_standard_request.c **** //! @warning Code:xx bytes (function code length)
+ 174:usb/usb_standard_request.c **** //!
+ 175:usb/usb_standard_request.c **** //! @param none
+ 176:usb/usb_standard_request.c **** //!
+ 177:usb/usb_standard_request.c **** //! @return none
+ 178:usb/usb_standard_request.c **** //!
+ 179:usb/usb_standard_request.c **** void usb_set_address(void)
+ 180:usb/usb_standard_request.c **** {
+ 181:usb/usb_standard_request.c ****    Usb_configure_address(Usb_read_byte());
+ 182:usb/usb_standard_request.c **** 
+ 183:usb/usb_standard_request.c ****    Usb_ack_receive_setup();
+ 184:usb/usb_standard_request.c **** 
+ 185:usb/usb_standard_request.c ****    Usb_send_control_in();                    //!< send a ZLP for STATUS phase
+ 186:usb/usb_standard_request.c ****    while(!Is_usb_in_ready());                //!< waits for status phase done
+ 187:usb/usb_standard_request.c ****                                              //!< before using the new address
+ 188:usb/usb_standard_request.c ****    Usb_enable_address();
+ 189:usb/usb_standard_request.c **** }
+ 190:usb/usb_standard_request.c **** 
+ 191:usb/usb_standard_request.c **** 
+ 192:usb/usb_standard_request.c **** //! usb_set_configuration.
+ 193:usb/usb_standard_request.c **** //!
+ 194:usb/usb_standard_request.c **** //! This function manages the SET CONFIGURATION request. If the selected
+ 195:usb/usb_standard_request.c **** //! configuration is valid, this function call the usb_user_endpoint_init()
+ 196:usb/usb_standard_request.c **** //! function that will configure the endpoints following the configuration
+ 197:usb/usb_standard_request.c **** //! number.
+ 198:usb/usb_standard_request.c **** //!
+ 199:usb/usb_standard_request.c **** //! @warning Code:xx bytes (function code length)
+ 200:usb/usb_standard_request.c **** //!
+ 201:usb/usb_standard_request.c **** //! @param none
+ 202:usb/usb_standard_request.c **** //!
+ 203:usb/usb_standard_request.c **** //! @return none
+ 204:usb/usb_standard_request.c **** //!
+ 205:usb/usb_standard_request.c **** void usb_set_configuration( void )
+ 206:usb/usb_standard_request.c **** {
+ 207:usb/usb_standard_request.c **** U8 configuration_number;
+ 208:usb/usb_standard_request.c **** 
+ 209:usb/usb_standard_request.c ****    configuration_number = Usb_read_byte();
+ 210:usb/usb_standard_request.c **** 
+ 211:usb/usb_standard_request.c ****    if (configuration_number <= NB_CONFIGURATION)
+ 212:usb/usb_standard_request.c ****    {
+ 213:usb/usb_standard_request.c ****       Usb_ack_receive_setup();
+ 214:usb/usb_standard_request.c ****       usb_configuration_nb = configuration_number;
+ 215:usb/usb_standard_request.c ****    }
+ 216:usb/usb_standard_request.c ****    else
+ 217:usb/usb_standard_request.c ****    {
+ 218:usb/usb_standard_request.c ****       //!< keep that order (set StallRq/clear RxSetup) or a
+ 219:usb/usb_standard_request.c ****       //!< OUT request following the SETUP may be acknowledged
+ 220:usb/usb_standard_request.c ****       Usb_enable_stall_handshake();
+ 221:usb/usb_standard_request.c ****       Usb_ack_receive_setup();
+ 222:usb/usb_standard_request.c ****       return;
+ 223:usb/usb_standard_request.c ****    }
+ 224:usb/usb_standard_request.c **** 
+ 225:usb/usb_standard_request.c ****    Usb_send_control_in();                    //!< send a ZLP for STATUS phase
+ 226:usb/usb_standard_request.c **** 
+ 227:usb/usb_standard_request.c ****    usb_user_endpoint_init(usb_configuration_nb);  //!< endpoint configuration
+ 228:usb/usb_standard_request.c ****    Usb_set_configuration_action();
+ 229:usb/usb_standard_request.c **** }
+ 230:usb/usb_standard_request.c **** 
+ 231:usb/usb_standard_request.c **** 
+ 232:usb/usb_standard_request.c **** //! usb_get_descriptor.
+ 233:usb/usb_standard_request.c **** //!
+ 234:usb/usb_standard_request.c **** //! This function manages the GET DESCRIPTOR request. The device descriptor,
+ 235:usb/usb_standard_request.c **** //! the configuration descriptor and the device qualifier are supported. All
+ 236:usb/usb_standard_request.c **** //! other descriptors must be supported by the usb_user_get_descriptor
+ 237:usb/usb_standard_request.c **** //! function.
+ 238:usb/usb_standard_request.c **** //! Only 1 configuration is supported.
+ 239:usb/usb_standard_request.c **** //!
+ 240:usb/usb_standard_request.c **** //! @warning Code:xx bytes (function code length)
+ 241:usb/usb_standard_request.c **** //!
+ 242:usb/usb_standard_request.c **** //! @param none
+ 243:usb/usb_standard_request.c **** //!
+ 244:usb/usb_standard_request.c **** //! @return none
+ 245:usb/usb_standard_request.c **** //!
+ 246:usb/usb_standard_request.c **** void usb_get_descriptor(void)
+ 247:usb/usb_standard_request.c **** {
+ 248:usb/usb_standard_request.c **** U16  wLength;
+ 249:usb/usb_standard_request.c **** U8   descriptor_type ;
+ 250:usb/usb_standard_request.c **** U8   string_type;
+ 251:usb/usb_standard_request.c **** U8   dummy;
+ 252:usb/usb_standard_request.c **** U8   nb_byte;
+ 253:usb/usb_standard_request.c **** 
+ 254:usb/usb_standard_request.c ****    zlp             = FALSE;                  /* no zero length packet */
+  81               		.loc 1 254 0
+  82 003c 1092 0000 		sts zlp,__zero_reg__
+ 255:usb/usb_standard_request.c ****    string_type     = Usb_read_byte();        /* read LSB of wValue    */
+  83               		.loc 1 255 0
+  84 0040 6091 F100 		lds r22,241
+  85               	.LVL2:
+ 256:usb/usb_standard_request.c ****    descriptor_type = Usb_read_byte();        /* read MSB of wValue    */
+  86               		.loc 1 256 0
+  87 0044 8091 F100 		lds r24,241
+  88               	.LVL3:
+ 257:usb/usb_standard_request.c **** 
+ 258:usb/usb_standard_request.c ****    switch (descriptor_type)
+  89               		.loc 1 258 0
+  90 0048 8130      		cpi r24,lo8(1)
+  91 004a 01F0      		breq .L15
+  92 004c 8230      		cpi r24,lo8(2)
+  93 004e 01F4      		brne .L100
+ 259:usb/usb_standard_request.c ****    {
+ 260:usb/usb_standard_request.c ****     case DEVICE_DESCRIPTOR:
+ 261:usb/usb_standard_request.c ****       data_to_transfer = Usb_get_dev_desc_length(); //!< sizeof (usb_user_device_descriptor);
+ 262:usb/usb_standard_request.c ****       pbuffer          = Usb_get_dev_desc_pointer();
+ 263:usb/usb_standard_request.c ****       break;
+ 264:usb/usb_standard_request.c ****     case CONFIGURATION_DESCRIPTOR:
+ 265:usb/usb_standard_request.c ****       data_to_transfer = Usb_get_conf_desc_length(); //!< sizeof (usb_user_configuration_descriptor
+  94               		.loc 1 265 0
+  95 0050 89E2      		ldi r24,lo8(41)
+  96               	.LVL4:
+  97 0052 8093 0000 		sts data_to_transfer,r24
+ 266:usb/usb_standard_request.c ****       pbuffer          = Usb_get_conf_desc_pointer();
+  98               		.loc 1 266 0
+  99 0056 80E0      		ldi r24,lo8(usb_conf_desc)
+ 100 0058 90E0      		ldi r25,hi8(usb_conf_desc)
+ 101 005a 00C0      		rjmp .L91
+ 102               	.LVL5:
+ 103               	.L15:
+ 261:usb/usb_standard_request.c ****       pbuffer          = Usb_get_dev_desc_pointer();
+ 104               		.loc 1 261 0
+ 105 005c 82E1      		ldi r24,lo8(18)
+ 106               	.LVL6:
+ 107 005e 8093 0000 		sts data_to_transfer,r24
+ 262:usb/usb_standard_request.c ****       break;
+ 108               		.loc 1 262 0
+ 109 0062 80E0      		ldi r24,lo8(usb_dev_desc)
+ 110 0064 90E0      		ldi r25,hi8(usb_dev_desc)
+ 111               	.L91:
+ 112               		.loc 1 266 0
+ 113 0066 9093 0000 		sts pbuffer+1,r25
+ 114 006a 8093 0000 		sts pbuffer,r24
+ 115 006e 00C0      		rjmp .L17
+ 116               	.LVL7:
+ 117               	.L100:
+ 267:usb/usb_standard_request.c ****       break;
+ 268:usb/usb_standard_request.c ****     default:
+ 269:usb/usb_standard_request.c ****       if( usb_user_get_descriptor(descriptor_type, string_type)==FALSE )
+ 118               		.loc 1 269 0
+ 119 0070 0E94 0000 		call usb_user_get_descriptor
+ 120               	.LVL8:
+ 121 0074 8823      		tst r24
+ 122 0076 01F4      		brne .+2
+ 123 0078 00C0      		rjmp .L93
+ 124               	.L17:
+ 270:usb/usb_standard_request.c ****       {
+ 271:usb/usb_standard_request.c ****          Usb_enable_stall_handshake();
+ 272:usb/usb_standard_request.c ****          Usb_ack_receive_setup();
+ 273:usb/usb_standard_request.c ****          return;
+ 274:usb/usb_standard_request.c ****       }
+ 275:usb/usb_standard_request.c ****       break;
+ 276:usb/usb_standard_request.c ****    }
+ 277:usb/usb_standard_request.c **** 
+ 278:usb/usb_standard_request.c ****    dummy = Usb_read_byte();                     //!< don't care of wIndex field
+ 125               		.loc 1 278 0
+ 126 007a 8091 F100 		lds r24,241
+ 279:usb/usb_standard_request.c ****    dummy = Usb_read_byte();
+ 127               		.loc 1 279 0
+ 128 007e 8091 F100 		lds r24,241
+ 280:usb/usb_standard_request.c ****    LSB(wLength) = Usb_read_byte();              //!< read wLength
+ 129               		.loc 1 280 0
+ 130 0082 8091 F100 		lds r24,241
+ 131 0086 8983      		std Y+1,r24
+ 281:usb/usb_standard_request.c ****    MSB(wLength) = Usb_read_byte();
+ 132               		.loc 1 281 0
+ 133 0088 8091 F100 		lds r24,241
+ 134 008c 8A83      		std Y+2,r24
+ 282:usb/usb_standard_request.c ****    Usb_ack_receive_setup() ;                  //!< clear the receive setup flag
+ 135               		.loc 1 282 0
+ 136 008e 8091 E800 		lds r24,232
+ 137 0092 877F      		andi r24,lo8(-9)
+ 138 0094 8093 E800 		sts 232,r24
+ 283:usb/usb_standard_request.c **** 
+ 284:usb/usb_standard_request.c ****    if (wLength > data_to_transfer)
+ 139               		.loc 1 284 0
+ 140 0098 2981      		ldd r18,Y+1
+ 141 009a 3A81      		ldd r19,Y+2
+ 142 009c 8091 0000 		lds r24,data_to_transfer
+ 143 00a0 482F      		mov r20,r24
+ 144 00a2 50E0      		ldi r21,0
+ 145 00a4 4217      		cp r20,r18
+ 146 00a6 5307      		cpc r21,r19
+ 147 00a8 00F4      		brsh .L19
+ 285:usb/usb_standard_request.c ****    {
+ 286:usb/usb_standard_request.c ****       if ((data_to_transfer % EP_CONTROL_LENGTH) == 0) { zlp = TRUE; }
+ 148               		.loc 1 286 0
+ 149 00aa 8F71      		andi r24,lo8(31)
+ 150 00ac 01F4      		brne .L20
+ 151 00ae 81E0      		ldi r24,lo8(1)
+ 152 00b0 8093 0000 		sts zlp,r24
+ 153 00b4 00C0      		rjmp .L21
+ 154               	.L20:
+ 287:usb/usb_standard_request.c ****       else { zlp = FALSE; }                   //!< no need of zero length packet
+ 155               		.loc 1 287 0
+ 156 00b6 1092 0000 		sts zlp,__zero_reg__
+ 157 00ba 00C0      		rjmp .L21
+ 158               	.L19:
+ 288:usb/usb_standard_request.c ****    }
+ 289:usb/usb_standard_request.c ****    else
+ 290:usb/usb_standard_request.c ****    {
+ 291:usb/usb_standard_request.c ****       data_to_transfer = (U8)wLength;         //!< send only requested number of data
+ 159               		.loc 1 291 0
+ 160 00bc 2093 0000 		sts data_to_transfer,r18
+ 161               	.L21:
+ 292:usb/usb_standard_request.c ****    }
+ 293:usb/usb_standard_request.c **** 
+ 294:usb/usb_standard_request.c ****    Usb_ack_nak_out();
+ 162               		.loc 1 294 0
+ 163 00c0 8091 E800 		lds r24,232
+ 164 00c4 8F7E      		andi r24,lo8(-17)
+ 165               	.L92:
+ 295:usb/usb_standard_request.c **** 
+ 296:usb/usb_standard_request.c ****    while((data_to_transfer != 0) && (!Is_usb_nak_out_sent()))
+ 297:usb/usb_standard_request.c ****    {
+ 298:usb/usb_standard_request.c ****       while(!Is_usb_read_control_enabled())
+ 299:usb/usb_standard_request.c ****       {
+ 300:usb/usb_standard_request.c ****         if (Is_usb_nak_out_sent())
+ 301:usb/usb_standard_request.c ****           break;    // don't clear the flag now, it will be cleared after
+ 302:usb/usb_standard_request.c ****       }
+ 303:usb/usb_standard_request.c **** 
+ 304:usb/usb_standard_request.c ****       nb_byte=0;
+ 305:usb/usb_standard_request.c ****       while(data_to_transfer != 0)        //!< Send data until necessary
+ 306:usb/usb_standard_request.c ****       {
+ 307:usb/usb_standard_request.c ****          if(nb_byte++==EP_CONTROL_LENGTH) //!< Check endpoint 0 size
+ 308:usb/usb_standard_request.c ****          {
+ 309:usb/usb_standard_request.c ****             break;
+ 310:usb/usb_standard_request.c ****          }
+ 311:usb/usb_standard_request.c **** 
+ 312:usb/usb_standard_request.c **** #ifndef AVRGCC
+ 313:usb/usb_standard_request.c ****          Usb_write_byte(*pbuffer++);
+ 314:usb/usb_standard_request.c **** #else    // AVRGCC does not support point to PGM space
+ 315:usb/usb_standard_request.c **** #warning with avrgcc assumes devices descriptors are stored in the lower 64Kbytes of on-chip flash 
+ 316:usb/usb_standard_request.c ****          Usb_write_byte(pgm_read_byte_near((unsigned int)pbuffer++));
+ 317:usb/usb_standard_request.c **** #endif
+ 318:usb/usb_standard_request.c ****          data_to_transfer --;
+ 319:usb/usb_standard_request.c ****       }
+ 320:usb/usb_standard_request.c **** 
+ 321:usb/usb_standard_request.c ****       if (Is_usb_nak_out_sent())
+ 322:usb/usb_standard_request.c ****         break;
+ 323:usb/usb_standard_request.c ****       else
+ 324:usb/usb_standard_request.c ****         Usb_send_control_in();
+ 166               		.loc 1 324 0
+ 167 00c6 8093 E800 		sts 232,r24
+ 296:usb/usb_standard_request.c ****    {
+ 168               		.loc 1 296 0
+ 169 00ca 8091 0000 		lds r24,data_to_transfer
+ 170 00ce 8111      		cpse r24,__zero_reg__
+ 171 00d0 00C0      		rjmp .L101
+ 172               	.L30:
+ 325:usb/usb_standard_request.c ****    }
+ 326:usb/usb_standard_request.c **** 
+ 327:usb/usb_standard_request.c ****    if((zlp == TRUE) && (!Is_usb_nak_out_sent()))
+ 173               		.loc 1 327 0
+ 174 00d2 8091 0000 		lds r24,zlp
+ 175 00d6 8130      		cpi r24,lo8(1)
+ 176 00d8 01F0      		breq .+2
+ 177 00da 00C0      		rjmp .L33
+ 178 00dc 00C0      		rjmp .L102
+ 179               	.L101:
+ 296:usb/usb_standard_request.c ****    {
+ 180               		.loc 1 296 0
+ 181 00de 8091 E800 		lds r24,232
+ 182 00e2 84FD      		sbrc r24,4
+ 183 00e4 00C0      		rjmp .L30
+ 184               	.L31:
+ 298:usb/usb_standard_request.c ****       {
+ 185               		.loc 1 298 0
+ 186 00e6 8091 E800 		lds r24,232
+ 187 00ea 80FD      		sbrc r24,0
+ 188 00ec 00C0      		rjmp .L63
+ 300:usb/usb_standard_request.c ****           break;    // don't clear the flag now, it will be cleared after
+ 189               		.loc 1 300 0
+ 190 00ee 8091 E800 		lds r24,232
+ 191 00f2 84FF      		sbrs r24,4
+ 192 00f4 00C0      		rjmp .L31
+ 193               	.L63:
+ 194 00f6 81E2      		ldi r24,lo8(33)
+ 195               	.L90:
+ 196               	.LVL9:
+ 305:usb/usb_standard_request.c ****       {
+ 197               		.loc 1 305 0
+ 198 00f8 9091 0000 		lds r25,data_to_transfer
+ 199 00fc 9923      		tst r25
+ 200 00fe 01F0      		breq .L25
+ 201               	.LVL10:
+ 202 0100 8150      		subi r24,lo8(-(-1))
+ 203               	.LVL11:
+ 307:usb/usb_standard_request.c ****          {
+ 204               		.loc 1 307 0
+ 205 0102 01F0      		breq .L25
+ 206               	.LVL12:
+ 207               	.LBB23:
+ 316:usb/usb_standard_request.c **** #endif
+ 208               		.loc 1 316 0
+ 209 0104 E091 0000 		lds r30,pbuffer
+ 210 0108 F091 0000 		lds r31,pbuffer+1
+ 211 010c 9F01      		movw r18,r30
+ 212 010e 2F5F      		subi r18,-1
+ 213 0110 3F4F      		sbci r19,-1
+ 214 0112 3093 0000 		sts pbuffer+1,r19
+ 215 0116 2093 0000 		sts pbuffer,r18
+ 216               	.LVL13:
+ 217               	/* #APP */
+ 218               	 ;  316 "usb/usb_standard_request.c" 1
+ 219 011a E491      		lpm r30, Z
+ 220               		
+ 221               	 ;  0 "" 2
+ 222               	.LVL14:
+ 223               	/* #NOAPP */
+ 224               	.LBE23:
+ 225 011c E093 F100 		sts 241,r30
+ 318:usb/usb_standard_request.c ****       }
+ 226               		.loc 1 318 0
+ 227 0120 9091 0000 		lds r25,data_to_transfer
+ 228 0124 9150      		subi r25,lo8(-(-1))
+ 229 0126 9093 0000 		sts data_to_transfer,r25
+ 230 012a 00C0      		rjmp .L90
+ 231               	.LVL15:
+ 232               	.L25:
+ 321:usb/usb_standard_request.c ****         break;
+ 233               		.loc 1 321 0
+ 234 012c 8091 E800 		lds r24,232
+ 235 0130 84FD      		sbrc r24,4
+ 236 0132 00C0      		rjmp .L30
+ 324:usb/usb_standard_request.c ****    }
+ 237               		.loc 1 324 0
+ 238 0134 8091 E800 		lds r24,232
+ 239 0138 8E7F      		andi r24,lo8(-2)
+ 240 013a 00C0      		rjmp .L92
+ 241               	.L102:
+ 242               		.loc 1 327 0
+ 243 013c 8091 E800 		lds r24,232
+ 244 0140 84FD      		sbrc r24,4
+ 245 0142 00C0      		rjmp .L33
+ 246               	.L32:
+ 328:usb/usb_standard_request.c ****    {
+ 329:usb/usb_standard_request.c ****      while(!Is_usb_read_control_enabled());
+ 247               		.loc 1 329 0
+ 248 0144 8091 E800 		lds r24,232
+ 249 0148 80FF      		sbrs r24,0
+ 250 014a 00C0      		rjmp .L32
+ 330:usb/usb_standard_request.c ****      Usb_send_control_in();
+ 251               		.loc 1 330 0
+ 252 014c 8091 E800 		lds r24,232
+ 253 0150 8E7F      		andi r24,lo8(-2)
+ 254 0152 8093 E800 		sts 232,r24
+ 255               	.L33:
+ 331:usb/usb_standard_request.c ****    }
+ 332:usb/usb_standard_request.c **** 
+ 333:usb/usb_standard_request.c ****    while (!(Is_usb_nak_out_sent()));
+ 256               		.loc 1 333 0
+ 257 0156 8091 E800 		lds r24,232
+ 258 015a 84FF      		sbrs r24,4
+ 259 015c 00C0      		rjmp .L33
+ 334:usb/usb_standard_request.c ****    Usb_ack_nak_out();       // clear NAKOUTI
+ 260               		.loc 1 334 0
+ 261 015e 8091 E800 		lds r24,232
+ 262 0162 8F7E      		andi r24,lo8(-17)
+ 263 0164 8093 E800 		sts 232,r24
+ 335:usb/usb_standard_request.c ****    UEINTX &= ~(1<<RXOUTI);  // clear RXOUTI
+ 264               		.loc 1 335 0
+ 265 0168 8091 E800 		lds r24,232
+ 266 016c 8B7F      		andi r24,lo8(-5)
+ 267 016e 00C0      		rjmp .L94
+ 268               	.L13:
+ 269               	.LBE22:
+ 270               	.LBE21:
+ 110:usb/usb_standard_request.c ****          break;
+ 271               		.loc 1 110 0
+ 272 0170 66E0      		ldi r22,lo8(6)
+ 273 0172 00C0      		rjmp .L95
+ 274               	.L9:
+ 114:usb/usb_standard_request.c ****          else                       { usb_user_read_request(bmRequestType, bmRequest); }
+ 275               		.loc 1 114 0
+ 276 0174 8038      		cpi r24,lo8(-128)
+ 277 0176 01F4      		brne .L34
+ 278               	.LBB24:
+ 279               	.LBB25:
+ 336:usb/usb_standard_request.c **** }
+ 337:usb/usb_standard_request.c **** 
+ 338:usb/usb_standard_request.c **** 
+ 339:usb/usb_standard_request.c **** //! usb_get_configuration.
+ 340:usb/usb_standard_request.c **** //!
+ 341:usb/usb_standard_request.c **** //! This function manages the GET CONFIGURATION request. The current
+ 342:usb/usb_standard_request.c **** //! configuration number is returned.
+ 343:usb/usb_standard_request.c **** //!
+ 344:usb/usb_standard_request.c **** //! @warning Code:xx bytes (function code length)
+ 345:usb/usb_standard_request.c **** //!
+ 346:usb/usb_standard_request.c **** //! @param none
+ 347:usb/usb_standard_request.c **** //!
+ 348:usb/usb_standard_request.c **** //! @return none
+ 349:usb/usb_standard_request.c **** //!
+ 350:usb/usb_standard_request.c **** void usb_get_configuration(void)
+ 351:usb/usb_standard_request.c **** {
+ 352:usb/usb_standard_request.c ****    Usb_ack_receive_setup();
+ 280               		.loc 1 352 0
+ 281 0178 8091 E800 		lds r24,232
+ 282 017c 877F      		andi r24,lo8(-9)
+ 283 017e 8093 E800 		sts 232,r24
+ 353:usb/usb_standard_request.c **** 
+ 354:usb/usb_standard_request.c ****    Usb_write_byte(usb_configuration_nb);
+ 284               		.loc 1 354 0
+ 285 0182 8091 0000 		lds r24,usb_configuration_nb
+ 286 0186 8093 F100 		sts 241,r24
+ 355:usb/usb_standard_request.c ****    Usb_ack_in_ready();
+ 287               		.loc 1 355 0
+ 288 018a 8091 E800 		lds r24,232
+ 289 018e 8E7F      		andi r24,lo8(-2)
+ 290 0190 8093 E800 		sts 232,r24
+ 291 0194 8091 E800 		lds r24,232
+ 292 0198 8F77      		andi r24,lo8(127)
+ 293 019a 8093 E800 		sts 232,r24
+ 294               	.L35:
+ 356:usb/usb_standard_request.c **** 
+ 357:usb/usb_standard_request.c ****    while( !Is_usb_receive_out() );
+ 295               		.loc 1 357 0
+ 296 019e 8091 E800 		lds r24,232
+ 297 01a2 82FF      		sbrs r24,2
+ 298 01a4 00C0      		rjmp .L35
+ 299 01a6 00C0      		rjmp .L97
+ 300               	.L34:
+ 301               	.LBE25:
+ 302               	.LBE24:
+ 115:usb/usb_standard_request.c ****          break;
+ 303               		.loc 1 115 0
+ 304 01a8 68E0      		ldi r22,lo8(8)
+ 305 01aa 00C0      		rjmp .L95
+ 306               	.L7:
+ 119:usb/usb_standard_request.c ****          else                       { usb_user_read_request(bmRequestType, bmRequest); }
+ 307               		.loc 1 119 0
+ 308 01ac 8111      		cpse r24,__zero_reg__
+ 309 01ae 00C0      		rjmp .L36
+ 310               	.LBB26:
+ 311               	.LBB27:
+ 181:usb/usb_standard_request.c **** 
+ 312               		.loc 1 181 0
+ 313 01b0 8091 E300 		lds r24,227
+ 314 01b4 9091 F100 		lds r25,241
+ 315 01b8 9F77      		andi r25,lo8(127)
+ 316 01ba 8078      		andi r24,lo8(-128)
+ 317 01bc 892B      		or r24,r25
+ 318 01be 8093 E300 		sts 227,r24
+ 183:usb/usb_standard_request.c **** 
+ 319               		.loc 1 183 0
+ 320 01c2 8091 E800 		lds r24,232
+ 321 01c6 877F      		andi r24,lo8(-9)
+ 322 01c8 8093 E800 		sts 232,r24
+ 185:usb/usb_standard_request.c ****    while(!Is_usb_in_ready());                //!< waits for status phase done
+ 323               		.loc 1 185 0
+ 324 01cc 8091 E800 		lds r24,232
+ 325 01d0 8E7F      		andi r24,lo8(-2)
+ 326 01d2 8093 E800 		sts 232,r24
+ 327               	.L37:
+ 186:usb/usb_standard_request.c ****                                              //!< before using the new address
+ 328               		.loc 1 186 0
+ 329 01d6 8091 E800 		lds r24,232
+ 330 01da 80FF      		sbrs r24,0
+ 331 01dc 00C0      		rjmp .L37
+ 188:usb/usb_standard_request.c **** }
+ 332               		.loc 1 188 0
+ 333 01de 8091 E300 		lds r24,227
+ 334 01e2 8068      		ori r24,lo8(-128)
+ 335 01e4 8093 E300 		sts 227,r24
+ 336 01e8 00C0      		rjmp .L1
+ 337               	.L36:
+ 338               	.LBE27:
+ 339               	.LBE26:
+ 120:usb/usb_standard_request.c ****          break;
+ 340               		.loc 1 120 0
+ 341 01ea 65E0      		ldi r22,lo8(5)
+ 342 01ec 00C0      		rjmp .L95
+ 343               	.L10:
+ 124:usb/usb_standard_request.c ****          else                       { usb_user_read_request(bmRequestType, bmRequest); }
+ 344               		.loc 1 124 0
+ 345 01ee 8111      		cpse r24,__zero_reg__
+ 346 01f0 00C0      		rjmp .L38
+ 347               	.LBB28:
+ 348               	.LBB29:
+ 209:usb/usb_standard_request.c **** 
+ 349               		.loc 1 209 0
+ 350 01f2 9091 F100 		lds r25,241
+ 351               	.LVL16:
+ 211:usb/usb_standard_request.c ****    {
+ 352               		.loc 1 211 0
+ 353 01f6 9230      		cpi r25,lo8(2)
+ 354 01f8 00F0      		brlo .+2
+ 355 01fa 00C0      		rjmp .L93
+ 213:usb/usb_standard_request.c ****       usb_configuration_nb = configuration_number;
+ 356               		.loc 1 213 0
+ 357 01fc 8091 E800 		lds r24,232
+ 358 0200 877F      		andi r24,lo8(-9)
+ 359 0202 8093 E800 		sts 232,r24
+ 214:usb/usb_standard_request.c ****    }
+ 360               		.loc 1 214 0
+ 361 0206 9093 0000 		sts usb_configuration_nb,r25
+ 225:usb/usb_standard_request.c **** 
+ 362               		.loc 1 225 0
+ 363 020a 8091 E800 		lds r24,232
+ 364 020e 8E7F      		andi r24,lo8(-2)
+ 365 0210 8093 E800 		sts 232,r24
+ 227:usb/usb_standard_request.c ****    Usb_set_configuration_action();
+ 366               		.loc 1 227 0
+ 367 0214 8091 0000 		lds r24,usb_configuration_nb
+ 368               	/* epilogue start */
+ 369               	.LBE29:
+ 370               	.LBE28:
+ 165:usb/usb_standard_request.c **** 
+ 371               		.loc 1 165 0
+ 372 0218 0F90      		pop __tmp_reg__
+ 373 021a 0F90      		pop __tmp_reg__
+ 374 021c DF91      		pop r29
+ 375 021e CF91      		pop r28
+ 376               	.LBB31:
+ 377               	.LBB30:
+ 227:usb/usb_standard_request.c ****    Usb_set_configuration_action();
+ 378               		.loc 1 227 0
+ 379 0220 0C94 0000 		jmp usb_user_endpoint_init
+ 380               	.LVL17:
+ 381               	.L38:
+ 382               	.LBE30:
+ 383               	.LBE31:
+ 125:usb/usb_standard_request.c ****          break;
+ 384               		.loc 1 125 0
+ 385 0224 69E0      		ldi r22,lo8(9)
+ 386 0226 00C0      		rjmp .L95
+ 387               	.L5:
+ 129:usb/usb_standard_request.c ****          else                       { usb_user_read_request(bmRequestType, bmRequest); }
+ 388               		.loc 1 129 0
+ 389 0228 8330      		cpi r24,lo8(3)
+ 390 022a 00F4      		brsh .L40
+ 391               	.LBB32:
+ 392               	.LBB33:
+ 358:usb/usb_standard_request.c ****    Usb_ack_receive_out();
+ 359:usb/usb_standard_request.c **** }
+ 360:usb/usb_standard_request.c **** 
+ 361:usb/usb_standard_request.c **** //! usb_get_status.
+ 362:usb/usb_standard_request.c **** //!
+ 363:usb/usb_standard_request.c **** //! This function manages the GET STATUS request. The device, interface or
+ 364:usb/usb_standard_request.c **** //! endpoint status is returned.
+ 365:usb/usb_standard_request.c **** //!
+ 366:usb/usb_standard_request.c **** //! @warning Code:xx bytes (function code length)
+ 367:usb/usb_standard_request.c **** //!
+ 368:usb/usb_standard_request.c **** //! @param none
+ 369:usb/usb_standard_request.c **** //!
+ 370:usb/usb_standard_request.c **** //! @return none
+ 371:usb/usb_standard_request.c **** //!
+ 372:usb/usb_standard_request.c **** void usb_get_status(void)
+ 373:usb/usb_standard_request.c **** {
+ 374:usb/usb_standard_request.c **** U8 wIndex;
+ 375:usb/usb_standard_request.c **** U8 dummy;
+ 376:usb/usb_standard_request.c **** 
+ 377:usb/usb_standard_request.c ****    dummy    = Usb_read_byte();                 //!< dummy read
+ 378:usb/usb_standard_request.c ****    dummy    = Usb_read_byte();                 //!< dummy read
+ 379:usb/usb_standard_request.c ****    wIndex = Usb_read_byte();
+ 380:usb/usb_standard_request.c **** 
+ 381:usb/usb_standard_request.c ****    switch(bmRequestType)
+ 382:usb/usb_standard_request.c ****    {
+ 383:usb/usb_standard_request.c ****     case REQUEST_DEVICE_STATUS:    Usb_ack_receive_setup();
+ 384:usb/usb_standard_request.c ****                                    Usb_write_byte(device_status);
+ 385:usb/usb_standard_request.c ****                                    break;
+ 386:usb/usb_standard_request.c **** 
+ 387:usb/usb_standard_request.c ****     case REQUEST_INTERFACE_STATUS: Usb_ack_receive_setup();
+ 388:usb/usb_standard_request.c ****                                    Usb_write_byte(INTERFACE_STATUS);
+ 389:usb/usb_standard_request.c ****                                    break;
+ 390:usb/usb_standard_request.c **** 
+ 391:usb/usb_standard_request.c ****     case REQUEST_ENDPOINT_STATUS:  Usb_ack_receive_setup();
+ 392:usb/usb_standard_request.c ****                                    wIndex = wIndex & MSK_EP_DIR;
+ 393:usb/usb_standard_request.c ****                                    Usb_write_byte(endpoint_status[wIndex]);
+ 394:usb/usb_standard_request.c ****                                    break;
+ 395:usb/usb_standard_request.c ****     default:
+ 396:usb/usb_standard_request.c ****                                    Usb_enable_stall_handshake();
+ 397:usb/usb_standard_request.c ****                                    Usb_ack_receive_setup();
+ 398:usb/usb_standard_request.c ****                                    return;
+ 399:usb/usb_standard_request.c ****    }
+ 400:usb/usb_standard_request.c **** 
+ 401:usb/usb_standard_request.c ****    Usb_write_byte(0x00);
+ 402:usb/usb_standard_request.c ****    Usb_send_control_in();
+ 403:usb/usb_standard_request.c **** 
+ 404:usb/usb_standard_request.c ****    while( !Is_usb_receive_out() );
+ 405:usb/usb_standard_request.c ****    Usb_ack_receive_out();
+ 406:usb/usb_standard_request.c **** }
+ 407:usb/usb_standard_request.c **** 
+ 408:usb/usb_standard_request.c **** 
+ 409:usb/usb_standard_request.c **** //! usb_set_feature.
+ 410:usb/usb_standard_request.c **** //!
+ 411:usb/usb_standard_request.c **** //! This function manages the SET FEATURE request. The USB test modes are
+ 412:usb/usb_standard_request.c **** //! supported by this function.
+ 413:usb/usb_standard_request.c **** //!
+ 414:usb/usb_standard_request.c **** //! @warning Code:xx bytes (function code length)
+ 415:usb/usb_standard_request.c **** //!
+ 416:usb/usb_standard_request.c **** //! @param none
+ 417:usb/usb_standard_request.c **** //!
+ 418:usb/usb_standard_request.c **** //! @return none
+ 419:usb/usb_standard_request.c **** //!
+ 420:usb/usb_standard_request.c **** void usb_set_feature(void)
+ 421:usb/usb_standard_request.c **** {
+ 422:usb/usb_standard_request.c **** U8 wValue;
+ 423:usb/usb_standard_request.c **** U8 wIndex;
+ 424:usb/usb_standard_request.c **** U8 dummy;
+ 425:usb/usb_standard_request.c **** 
+ 426:usb/usb_standard_request.c ****    if (bmRequestType == ZERO_TYPE)
+ 427:usb/usb_standard_request.c ****    {
+ 428:usb/usb_standard_request.c ****      wValue = Usb_read_byte();
+ 429:usb/usb_standard_request.c ****      if ((wValue == FEATURE_DEVICE_REMOTE_WAKEUP) && (USB_REMOTE_WAKEUP == ENABLED))
+ 430:usb/usb_standard_request.c ****      {
+ 431:usb/usb_standard_request.c ****        device_status |= USB_STATUS_REMOTEWAKEUP;
+ 432:usb/usb_standard_request.c ****        usb_remote_wup_feature = ENABLED;
+ 433:usb/usb_standard_request.c ****        Usb_ack_receive_setup();
+ 434:usb/usb_standard_request.c ****        Usb_send_control_in();
+ 435:usb/usb_standard_request.c ****      }
+ 436:usb/usb_standard_request.c ****      else
+ 437:usb/usb_standard_request.c ****      {
+ 438:usb/usb_standard_request.c ****        Usb_enable_stall_handshake();
+ 439:usb/usb_standard_request.c ****        Usb_ack_receive_setup();
+ 440:usb/usb_standard_request.c ****      }
+ 441:usb/usb_standard_request.c ****      return;
+ 442:usb/usb_standard_request.c ****    }
+ 443:usb/usb_standard_request.c ****    else if (bmRequestType == INTERFACE_TYPE)
+ 444:usb/usb_standard_request.c ****    {
+ 445:usb/usb_standard_request.c ****       //!< keep that order (set StallRq/clear RxSetup) or a
+ 446:usb/usb_standard_request.c ****       //!< OUT request following the SETUP may be acknowledged
+ 447:usb/usb_standard_request.c ****       Usb_enable_stall_handshake();
+ 448:usb/usb_standard_request.c ****       Usb_ack_receive_setup();
+ 449:usb/usb_standard_request.c ****       return;
+ 450:usb/usb_standard_request.c ****    }
+ 451:usb/usb_standard_request.c ****    else if (bmRequestType == ENDPOINT_TYPE)
+ 452:usb/usb_standard_request.c ****    {
+ 453:usb/usb_standard_request.c ****       wValue = Usb_read_byte();
+ 454:usb/usb_standard_request.c ****       dummy    = Usb_read_byte();                //!< dummy read
+ 455:usb/usb_standard_request.c **** 
+ 456:usb/usb_standard_request.c ****       if (wValue == FEATURE_ENDPOINT_HALT)
+ 457:usb/usb_standard_request.c ****       {
+ 458:usb/usb_standard_request.c ****          wIndex = (Usb_read_byte() & MSK_EP_DIR);
+ 459:usb/usb_standard_request.c **** 
+ 460:usb/usb_standard_request.c ****          if (wIndex == EP_CONTROL)
+ 461:usb/usb_standard_request.c ****          {
+ 462:usb/usb_standard_request.c ****             Usb_enable_stall_handshake();
+ 463:usb/usb_standard_request.c ****             Usb_ack_receive_setup();
+ 464:usb/usb_standard_request.c ****             return;
+ 465:usb/usb_standard_request.c ****          }
+ 466:usb/usb_standard_request.c **** 
+ 467:usb/usb_standard_request.c ****          Usb_select_endpoint(wIndex);
+ 468:usb/usb_standard_request.c ****          if(Is_usb_endpoint_enabled())
+ 469:usb/usb_standard_request.c ****          {
+ 470:usb/usb_standard_request.c ****             Usb_enable_stall_handshake();
+ 471:usb/usb_standard_request.c ****             Usb_select_endpoint(EP_CONTROL);
+ 472:usb/usb_standard_request.c ****             endpoint_status[wIndex] = 0x01;
+ 473:usb/usb_standard_request.c ****             Usb_ack_receive_setup();
+ 474:usb/usb_standard_request.c ****             Usb_send_control_in();
+ 475:usb/usb_standard_request.c ****          }
+ 476:usb/usb_standard_request.c ****          else
+ 477:usb/usb_standard_request.c ****          {
+ 478:usb/usb_standard_request.c ****             Usb_select_endpoint(EP_CONTROL);
+ 479:usb/usb_standard_request.c ****             Usb_enable_stall_handshake();
+ 480:usb/usb_standard_request.c ****             Usb_ack_receive_setup();
+ 481:usb/usb_standard_request.c ****             return;
+ 482:usb/usb_standard_request.c ****          }
+ 483:usb/usb_standard_request.c ****       }
+ 484:usb/usb_standard_request.c ****       else
+ 485:usb/usb_standard_request.c ****       {
+ 486:usb/usb_standard_request.c ****          Usb_enable_stall_handshake();
+ 487:usb/usb_standard_request.c ****          Usb_ack_receive_setup();
+ 488:usb/usb_standard_request.c ****          return;
+ 489:usb/usb_standard_request.c ****       }
+ 490:usb/usb_standard_request.c ****    }
+ 491:usb/usb_standard_request.c **** }
+ 492:usb/usb_standard_request.c **** 
+ 493:usb/usb_standard_request.c **** 
+ 494:usb/usb_standard_request.c **** //! usb_clear_feature.
+ 495:usb/usb_standard_request.c **** //!
+ 496:usb/usb_standard_request.c **** //! This function manages the SET FEATURE request.
+ 497:usb/usb_standard_request.c **** //!
+ 498:usb/usb_standard_request.c **** //! @warning Code:xx bytes (function code length)
+ 499:usb/usb_standard_request.c **** //!
+ 500:usb/usb_standard_request.c **** //! @param none
+ 501:usb/usb_standard_request.c **** //!
+ 502:usb/usb_standard_request.c **** //! @return none
+ 503:usb/usb_standard_request.c **** //!
+ 504:usb/usb_standard_request.c **** void usb_clear_feature(void)
+ 505:usb/usb_standard_request.c **** {
+ 506:usb/usb_standard_request.c **** U8 wValue;
+ 507:usb/usb_standard_request.c **** U8 wIndex;
+ 508:usb/usb_standard_request.c **** U8 dummy;
+ 509:usb/usb_standard_request.c **** 
+ 510:usb/usb_standard_request.c ****    if (bmRequestType == ZERO_TYPE)
+ 393               		.loc 1 510 0
+ 394 022c 8823      		tst r24
+ 395 022e 01F0      		breq .L96
+ 511:usb/usb_standard_request.c ****    {
+ 512:usb/usb_standard_request.c ****      wValue = Usb_read_byte();
+ 513:usb/usb_standard_request.c ****      if ((wValue == FEATURE_DEVICE_REMOTE_WAKEUP) && (USB_REMOTE_WAKEUP == ENABLED))
+ 514:usb/usb_standard_request.c ****      {
+ 515:usb/usb_standard_request.c ****        device_status &= ~USB_STATUS_REMOTEWAKEUP;
+ 516:usb/usb_standard_request.c ****        usb_remote_wup_feature = DISABLED;
+ 517:usb/usb_standard_request.c ****        Usb_ack_receive_setup();
+ 518:usb/usb_standard_request.c ****        Usb_send_control_in();
+ 519:usb/usb_standard_request.c ****      }
+ 520:usb/usb_standard_request.c ****      else
+ 521:usb/usb_standard_request.c ****      {
+ 522:usb/usb_standard_request.c ****       Usb_enable_stall_handshake();
+ 523:usb/usb_standard_request.c ****       Usb_ack_receive_setup();
+ 524:usb/usb_standard_request.c ****      }
+ 525:usb/usb_standard_request.c ****       return;
+ 526:usb/usb_standard_request.c ****    }
+ 527:usb/usb_standard_request.c ****    else if (bmRequestType == INTERFACE_TYPE)
+ 396               		.loc 1 527 0
+ 397 0230 8130      		cpi r24,lo8(1)
+ 398 0232 01F4      		brne .+2
+ 399 0234 00C0      		rjmp .L93
+ 528:usb/usb_standard_request.c ****    {
+ 529:usb/usb_standard_request.c ****       //!< keep that order (set StallRq/clear RxSetup) or a
+ 530:usb/usb_standard_request.c ****       //!< OUT request following the SETUP may be acknowledged
+ 531:usb/usb_standard_request.c ****       Usb_enable_stall_handshake();
+ 532:usb/usb_standard_request.c ****       Usb_ack_receive_setup();
+ 533:usb/usb_standard_request.c ****       return;
+ 534:usb/usb_standard_request.c ****    }
+ 535:usb/usb_standard_request.c ****    else if (bmRequestType == ENDPOINT_TYPE)
+ 536:usb/usb_standard_request.c ****    {
+ 537:usb/usb_standard_request.c ****       wValue = Usb_read_byte();
+ 400               		.loc 1 537 0
+ 401 0236 8091 F100 		lds r24,241
+ 402               	.LVL18:
+ 538:usb/usb_standard_request.c ****       dummy  = Usb_read_byte();                //!< dummy read
+ 403               		.loc 1 538 0
+ 404 023a 9091 F100 		lds r25,241
+ 539:usb/usb_standard_request.c **** 
+ 540:usb/usb_standard_request.c ****       if (wValue == FEATURE_ENDPOINT_HALT)
+ 405               		.loc 1 540 0
+ 406 023e 8111      		cpse r24,__zero_reg__
+ 407 0240 00C0      		rjmp .L93
+ 541:usb/usb_standard_request.c ****       {
+ 542:usb/usb_standard_request.c ****          wIndex = (Usb_read_byte() & MSK_EP_DIR);
+ 408               		.loc 1 542 0
+ 409 0242 E091 F100 		lds r30,241
+ 410 0246 EF77      		andi r30,lo8(127)
+ 411               	.LVL19:
+ 543:usb/usb_standard_request.c **** 
+ 544:usb/usb_standard_request.c ****          Usb_select_endpoint(wIndex);
+ 412               		.loc 1 544 0
+ 413 0248 E093 E900 		sts 233,r30
+ 545:usb/usb_standard_request.c ****          if(Is_usb_endpoint_enabled())
+ 414               		.loc 1 545 0
+ 415 024c 8091 EB00 		lds r24,235
+ 416               	.LVL20:
+ 417 0250 80FF      		sbrs r24,0
+ 418 0252 00C0      		rjmp .L51
+ 546:usb/usb_standard_request.c ****          {
+ 547:usb/usb_standard_request.c ****             if(wIndex != EP_CONTROL)
+ 419               		.loc 1 547 0
+ 420 0254 EE23      		tst r30
+ 421 0256 01F0      		breq .L45
+ 548:usb/usb_standard_request.c ****             {
+ 549:usb/usb_standard_request.c ****                Usb_disable_stall_handshake();
+ 422               		.loc 1 549 0
+ 423 0258 8091 EB00 		lds r24,235
+ 424 025c 8061      		ori r24,lo8(16)
+ 425 025e 8093 EB00 		sts 235,r24
+ 550:usb/usb_standard_request.c ****                Usb_reset_endpoint(wIndex);
+ 426               		.loc 1 550 0
+ 427 0262 81E0      		ldi r24,lo8(1)
+ 428 0264 90E0      		ldi r25,0
+ 429 0266 0E2E      		mov r0,r30
+ 430 0268 00C0      		rjmp 2f
+ 431               		1:
+ 432 026a 880F      		lsl r24
+ 433               		2:
+ 434 026c 0A94      		dec r0
+ 435 026e 02F4      		brpl 1b
+ 436 0270 8093 EA00 		sts 234,r24
+ 437 0274 1092 EA00 		sts 234,__zero_reg__
+ 551:usb/usb_standard_request.c ****                Usb_reset_data_toggle();
+ 438               		.loc 1 551 0
+ 439 0278 8091 EB00 		lds r24,235
+ 440 027c 8860      		ori r24,lo8(8)
+ 441 027e 8093 EB00 		sts 235,r24
+ 442               	.L45:
+ 552:usb/usb_standard_request.c ****             }
+ 553:usb/usb_standard_request.c ****             Usb_select_endpoint(EP_CONTROL);
+ 443               		.loc 1 553 0
+ 444 0282 1092 E900 		sts 233,__zero_reg__
+ 554:usb/usb_standard_request.c ****             endpoint_status[wIndex] = 0x00;
+ 445               		.loc 1 554 0
+ 446 0286 F0E0      		ldi r31,0
+ 447 0288 E050      		subi r30,lo8(-(endpoint_status))
+ 448 028a F040      		sbci r31,hi8(-(endpoint_status))
+ 449               	.LVL21:
+ 450 028c 1082      		st Z,__zero_reg__
+ 451 028e 00C0      		rjmp .L98
+ 452               	.L40:
+ 453               	.LBE33:
+ 454               	.LBE32:
+ 130:usb/usb_standard_request.c ****          break;
+ 455               		.loc 1 130 0
+ 456 0290 61E0      		ldi r22,lo8(1)
+ 457 0292 00C0      		rjmp .L95
+ 458               	.L6:
+ 134:usb/usb_standard_request.c ****          else                       { usb_user_read_request(bmRequestType, bmRequest); }
+ 459               		.loc 1 134 0
+ 460 0294 8330      		cpi r24,lo8(3)
+ 461 0296 00F4      		brsh .L46
+ 462               	.LBB34:
+ 463               	.LBB35:
+ 426:usb/usb_standard_request.c ****    {
+ 464               		.loc 1 426 0
+ 465 0298 8111      		cpse r24,__zero_reg__
+ 466 029a 00C0      		rjmp .L47
+ 467               	.L96:
+ 428:usb/usb_standard_request.c ****      if ((wValue == FEATURE_DEVICE_REMOTE_WAKEUP) && (USB_REMOTE_WAKEUP == ENABLED))
+ 468               		.loc 1 428 0
+ 469 029c 8091 F100 		lds r24,241
+ 470 02a0 00C0      		rjmp .L93
+ 471               	.L47:
+ 443:usb/usb_standard_request.c ****    {
+ 472               		.loc 1 443 0
+ 473 02a2 8130      		cpi r24,lo8(1)
+ 474 02a4 01F4      		brne .+2
+ 475 02a6 00C0      		rjmp .L93
+ 453:usb/usb_standard_request.c ****       dummy    = Usb_read_byte();                //!< dummy read
+ 476               		.loc 1 453 0
+ 477 02a8 8091 F100 		lds r24,241
+ 478               	.LVL22:
+ 454:usb/usb_standard_request.c **** 
+ 479               		.loc 1 454 0
+ 480 02ac 9091 F100 		lds r25,241
+ 456:usb/usb_standard_request.c ****       {
+ 481               		.loc 1 456 0
+ 482 02b0 8111      		cpse r24,__zero_reg__
+ 483 02b2 00C0      		rjmp .L93
+ 458:usb/usb_standard_request.c **** 
+ 484               		.loc 1 458 0
+ 485 02b4 E091 F100 		lds r30,241
+ 486 02b8 EF77      		andi r30,lo8(127)
+ 487               	.LVL23:
+ 460:usb/usb_standard_request.c ****          {
+ 488               		.loc 1 460 0
+ 489 02ba 01F4      		brne .+2
+ 490 02bc 00C0      		rjmp .L93
+ 467:usb/usb_standard_request.c ****          if(Is_usb_endpoint_enabled())
+ 491               		.loc 1 467 0
+ 492 02be E093 E900 		sts 233,r30
+ 468:usb/usb_standard_request.c ****          {
+ 493               		.loc 1 468 0
+ 494 02c2 8091 EB00 		lds r24,235
+ 495               	.LVL24:
+ 496 02c6 80FF      		sbrs r24,0
+ 497 02c8 00C0      		rjmp .L51
+ 470:usb/usb_standard_request.c ****             Usb_select_endpoint(EP_CONTROL);
+ 498               		.loc 1 470 0
+ 499 02ca 8091 EB00 		lds r24,235
+ 500 02ce 8062      		ori r24,lo8(32)
+ 501 02d0 8093 EB00 		sts 235,r24
+ 471:usb/usb_standard_request.c ****             endpoint_status[wIndex] = 0x01;
+ 502               		.loc 1 471 0
+ 503 02d4 1092 E900 		sts 233,__zero_reg__
+ 472:usb/usb_standard_request.c ****             Usb_ack_receive_setup();
+ 504               		.loc 1 472 0
+ 505 02d8 F0E0      		ldi r31,0
+ 506 02da E050      		subi r30,lo8(-(endpoint_status))
+ 507 02dc F040      		sbci r31,hi8(-(endpoint_status))
+ 508               	.LVL25:
+ 509 02de 81E0      		ldi r24,lo8(1)
+ 510 02e0 8083      		st Z,r24
+ 511               	.L98:
+ 473:usb/usb_standard_request.c ****             Usb_send_control_in();
+ 512               		.loc 1 473 0
+ 513 02e2 8091 E800 		lds r24,232
+ 514 02e6 877F      		andi r24,lo8(-9)
+ 515 02e8 8093 E800 		sts 232,r24
+ 474:usb/usb_standard_request.c ****          }
+ 516               		.loc 1 474 0
+ 517 02ec 8091 E800 		lds r24,232
+ 518 02f0 8E7F      		andi r24,lo8(-2)
+ 519 02f2 00C0      		rjmp .L94
+ 520               	.L51:
+ 478:usb/usb_standard_request.c ****             Usb_enable_stall_handshake();
+ 521               		.loc 1 478 0
+ 522 02f4 1092 E900 		sts 233,__zero_reg__
+ 523 02f8 00C0      		rjmp .L93
+ 524               	.L46:
+ 525               	.LBE35:
+ 526               	.LBE34:
+ 135:usb/usb_standard_request.c ****          break;
+ 527               		.loc 1 135 0
+ 528 02fa 63E0      		ldi r22,lo8(3)
+ 529 02fc 00C0      		rjmp .L95
+ 530               	.L3:
+ 139:usb/usb_standard_request.c ****                                     { usb_get_status(); }
+ 531               		.loc 1 139 0
+ 532 02fe 90E8      		ldi r25,lo8(-128)
+ 533 0300 980F      		add r25,r24
+ 534 0302 9330      		cpi r25,lo8(3)
+ 535 0304 00F4      		brsh .L52
+ 536               	.LBB36:
+ 537               	.LBB37:
+ 377:usb/usb_standard_request.c ****    dummy    = Usb_read_byte();                 //!< dummy read
+ 538               		.loc 1 377 0
+ 539 0306 9091 F100 		lds r25,241
+ 378:usb/usb_standard_request.c ****    wIndex = Usb_read_byte();
+ 540               		.loc 1 378 0
+ 541 030a 9091 F100 		lds r25,241
+ 379:usb/usb_standard_request.c **** 
+ 542               		.loc 1 379 0
+ 543 030e E091 F100 		lds r30,241
+ 544               	.LVL26:
+ 381:usb/usb_standard_request.c ****    {
+ 545               		.loc 1 381 0
+ 546 0312 8138      		cpi r24,lo8(-127)
+ 547 0314 01F0      		breq .L54
+ 548 0316 8238      		cpi r24,lo8(-126)
+ 549 0318 01F0      		breq .L55
+ 550               	.L54:
+ 387:usb/usb_standard_request.c ****                                    Usb_write_byte(INTERFACE_STATUS);
+ 551               		.loc 1 387 0
+ 552 031a 8091 E800 		lds r24,232
+ 553 031e 877F      		andi r24,lo8(-9)
+ 554 0320 8093 E800 		sts 232,r24
+ 388:usb/usb_standard_request.c ****                                    break;
+ 555               		.loc 1 388 0
+ 556 0324 1092 F100 		sts 241,__zero_reg__
+ 557 0328 00C0      		rjmp .L56
+ 558               	.L55:
+ 391:usb/usb_standard_request.c ****                                    wIndex = wIndex & MSK_EP_DIR;
+ 559               		.loc 1 391 0
+ 560 032a 8091 E800 		lds r24,232
+ 561 032e 877F      		andi r24,lo8(-9)
+ 562 0330 8093 E800 		sts 232,r24
+ 563               	.LVL27:
+ 392:usb/usb_standard_request.c ****                                    Usb_write_byte(endpoint_status[wIndex]);
+ 564               		.loc 1 392 0
+ 565 0334 EF77      		andi r30,lo8(127)
+ 566               	.LVL28:
+ 393:usb/usb_standard_request.c ****                                    break;
+ 567               		.loc 1 393 0
+ 568 0336 F0E0      		ldi r31,0
+ 569 0338 E050      		subi r30,lo8(-(endpoint_status))
+ 570 033a F040      		sbci r31,hi8(-(endpoint_status))
+ 571               	.LVL29:
+ 572 033c 8081      		ld r24,Z
+ 573 033e 8093 F100 		sts 241,r24
+ 574               	.L56:
+ 401:usb/usb_standard_request.c ****    Usb_send_control_in();
+ 575               		.loc 1 401 0
+ 576 0342 1092 F100 		sts 241,__zero_reg__
+ 402:usb/usb_standard_request.c **** 
+ 577               		.loc 1 402 0
+ 578 0346 8091 E800 		lds r24,232
+ 579 034a 8E7F      		andi r24,lo8(-2)
+ 580 034c 8093 E800 		sts 232,r24
+ 581               	.L57:
+ 404:usb/usb_standard_request.c ****    Usb_ack_receive_out();
+ 582               		.loc 1 404 0
+ 583 0350 8091 E800 		lds r24,232
+ 584 0354 82FF      		sbrs r24,2
+ 585 0356 00C0      		rjmp .L57
+ 586 0358 00C0      		rjmp .L97
+ 587               	.L52:
+ 588               	.LBE37:
+ 589               	.LBE36:
+ 141:usb/usb_standard_request.c ****          break;
+ 590               		.loc 1 141 0
+ 591 035a 60E0      		ldi r22,0
+ 592 035c 00C0      		rjmp .L95
+ 593               	.L11:
+ 145:usb/usb_standard_request.c ****           else { usb_user_read_request(bmRequestType, bmRequest); }
+ 594               		.loc 1 145 0
+ 595 035e 8138      		cpi r24,lo8(-127)
+ 596 0360 01F4      		brne .L58
+ 597               	.LBB38:
+ 598               	.LBB39:
+ 555:usb/usb_standard_request.c ****             Usb_ack_receive_setup();
+ 556:usb/usb_standard_request.c ****             Usb_send_control_in();
+ 557:usb/usb_standard_request.c ****          }
+ 558:usb/usb_standard_request.c ****          else
+ 559:usb/usb_standard_request.c ****          {
+ 560:usb/usb_standard_request.c ****             Usb_select_endpoint(EP_CONTROL);
+ 561:usb/usb_standard_request.c ****             Usb_enable_stall_handshake();
+ 562:usb/usb_standard_request.c ****             Usb_ack_receive_setup();
+ 563:usb/usb_standard_request.c ****             return;
+ 564:usb/usb_standard_request.c ****          }
+ 565:usb/usb_standard_request.c ****       }
+ 566:usb/usb_standard_request.c ****       else
+ 567:usb/usb_standard_request.c ****       {
+ 568:usb/usb_standard_request.c ****          Usb_enable_stall_handshake();
+ 569:usb/usb_standard_request.c ****          Usb_ack_receive_setup();
+ 570:usb/usb_standard_request.c ****          return;
+ 571:usb/usb_standard_request.c ****       }
+ 572:usb/usb_standard_request.c ****    }
+ 573:usb/usb_standard_request.c **** }
+ 574:usb/usb_standard_request.c **** 
+ 575:usb/usb_standard_request.c **** 
+ 576:usb/usb_standard_request.c **** 
+ 577:usb/usb_standard_request.c **** //! usb_get_interface.
+ 578:usb/usb_standard_request.c **** //!
+ 579:usb/usb_standard_request.c **** //! TThis function manages the GET_INTERFACE request.
+ 580:usb/usb_standard_request.c **** //!
+ 581:usb/usb_standard_request.c **** //! @warning Code:xx bytes (function code length)
+ 582:usb/usb_standard_request.c **** //!
+ 583:usb/usb_standard_request.c **** //! @param none
+ 584:usb/usb_standard_request.c **** //!
+ 585:usb/usb_standard_request.c **** //! @return none
+ 586:usb/usb_standard_request.c **** //!
+ 587:usb/usb_standard_request.c **** void usb_get_interface (void)
+ 588:usb/usb_standard_request.c **** {
+ 589:usb/usb_standard_request.c ****    Usb_ack_receive_setup();
+ 599               		.loc 1 589 0
+ 600 0362 8091 E800 		lds r24,232
+ 601 0366 877F      		andi r24,lo8(-9)
+ 602 0368 8093 E800 		sts 232,r24
+ 590:usb/usb_standard_request.c ****    Usb_send_control_in();
+ 603               		.loc 1 590 0
+ 604 036c 8091 E800 		lds r24,232
+ 605 0370 8E7F      		andi r24,lo8(-2)
+ 606 0372 8093 E800 		sts 232,r24
+ 607               	.L59:
+ 591:usb/usb_standard_request.c **** 
+ 592:usb/usb_standard_request.c ****    while( !Is_usb_receive_out() );
+ 608               		.loc 1 592 0
+ 609 0376 8091 E800 		lds r24,232
+ 610 037a 82FF      		sbrs r24,2
+ 611 037c 00C0      		rjmp .L59
+ 612               	.L97:
+ 593:usb/usb_standard_request.c ****    Usb_ack_receive_out();
+ 613               		.loc 1 593 0
+ 614 037e 8091 E800 		lds r24,232
+ 615 0382 8B7F      		andi r24,lo8(-5)
+ 616 0384 8093 E800 		sts 232,r24
+ 617 0388 8091 E800 		lds r24,232
+ 618 038c 8F77      		andi r24,lo8(127)
+ 619 038e 00C0      		rjmp .L94
+ 620               	.L58:
+ 621               	.LBE39:
+ 622               	.LBE38:
+ 146:usb/usb_standard_request.c ****           break;
+ 623               		.loc 1 146 0
+ 624 0390 6AE0      		ldi r22,lo8(10)
+ 625               	.L95:
+ 626               	/* epilogue start */
+ 165:usb/usb_standard_request.c **** 
+ 627               		.loc 1 165 0
+ 628 0392 0F90      		pop __tmp_reg__
+ 629 0394 0F90      		pop __tmp_reg__
+ 630 0396 DF91      		pop r29
+ 631 0398 CF91      		pop r28
+ 146:usb/usb_standard_request.c ****           break;
+ 632               		.loc 1 146 0
+ 633 039a 0C94 0000 		jmp usb_user_read_request
+ 634               	.LVL30:
+ 635               	.L12:
+ 151:usb/usb_standard_request.c ****       break;
+ 636               		.loc 1 151 0
+ 637 039e 8130      		cpi r24,lo8(1)
+ 638 03a0 01F4      		brne .L1
+ 639               	.LBB40:
+ 640               	.LBB41:
+ 594:usb/usb_standard_request.c **** 
+ 595:usb/usb_standard_request.c ****             //Usb_enable_stall_handshake();
+ 596:usb/usb_standard_request.c ****             //Usb_ack_receive_setup();
+ 597:usb/usb_standard_request.c **** }
+ 598:usb/usb_standard_request.c **** 
+ 599:usb/usb_standard_request.c **** //! usb_set_interface.
+ 600:usb/usb_standard_request.c **** //!
+ 601:usb/usb_standard_request.c **** //! TThis function manages the SET_INTERFACE request.
+ 602:usb/usb_standard_request.c **** //!
+ 603:usb/usb_standard_request.c **** //! @warning Code:xx bytes (function code length)
+ 604:usb/usb_standard_request.c **** //!
+ 605:usb/usb_standard_request.c **** //! @param none
+ 606:usb/usb_standard_request.c **** //!
+ 607:usb/usb_standard_request.c **** //! @return none
+ 608:usb/usb_standard_request.c **** //!
+ 609:usb/usb_standard_request.c **** void usb_set_interface (void)
+ 610:usb/usb_standard_request.c **** {
+ 611:usb/usb_standard_request.c ****   Usb_ack_receive_setup();
+ 641               		.loc 1 611 0
+ 642 03a2 8091 E800 		lds r24,232
+ 643 03a6 877F      		andi r24,lo8(-9)
+ 644 03a8 8093 E800 		sts 232,r24
+ 612:usb/usb_standard_request.c ****   Usb_send_control_in();                    //!< send a ZLP for STATUS phase
+ 645               		.loc 1 612 0
+ 646 03ac 8091 E800 		lds r24,232
+ 647 03b0 8E7F      		andi r24,lo8(-2)
+ 648 03b2 8093 E800 		sts 232,r24
+ 649               	.L61:
+ 613:usb/usb_standard_request.c ****   while(!Is_usb_in_ready());
+ 650               		.loc 1 613 0
+ 651 03b6 8091 E800 		lds r24,232
+ 652 03ba 80FF      		sbrs r24,0
+ 653 03bc 00C0      		rjmp .L61
+ 654 03be 00C0      		rjmp .L1
+ 655               	.L2:
+ 656               	.LBE41:
+ 657               	.LBE40:
+ 157:usb/usb_standard_request.c ****          {
+ 658               		.loc 1 157 0
+ 659 03c0 692F      		mov r22,r25
+ 660 03c2 0E94 0000 		call usb_user_read_request
+ 661               	.LVL31:
+ 662 03c6 8111      		cpse r24,__zero_reg__
+ 663 03c8 00C0      		rjmp .L1
+ 664               	.L93:
+ 159:usb/usb_standard_request.c ****             Usb_ack_receive_setup();
+ 665               		.loc 1 159 0
+ 666 03ca 8091 EB00 		lds r24,235
+ 667 03ce 8062      		ori r24,lo8(32)
+ 668 03d0 8093 EB00 		sts 235,r24
+ 160:usb/usb_standard_request.c ****             return;
+ 669               		.loc 1 160 0
+ 670 03d4 8091 E800 		lds r24,232
+ 671 03d8 877F      		andi r24,lo8(-9)
+ 672               	.L94:
+ 673 03da 8093 E800 		sts 232,r24
+ 674               	.L1:
+ 675               	/* epilogue start */
+ 165:usb/usb_standard_request.c **** 
+ 676               		.loc 1 165 0
+ 677 03de 0F90      		pop __tmp_reg__
+ 678 03e0 0F90      		pop __tmp_reg__
+ 679 03e2 DF91      		pop r29
+ 680 03e4 CF91      		pop r28
+ 681 03e6 0895      		ret
+ 682               		.cfi_endproc
+ 683               	.LFE1:
+ 685               		.comm	usb_remote_wup_feature,1,1
+ 686               		.comm	usb_configuration_nb,1,1
+ 687               		.local	bmRequestType
+ 688               		.comm	bmRequestType,1,1
+ 689               		.comm	wInterface,2,1
+ 690               		.comm	data_to_transfer,1,1
+ 691               		.comm	pbuffer,2,1
+ 692               		.local	endpoint_status
+ 693               		.comm	endpoint_status,2,1
+ 694               		.local	zlp
+ 695               		.comm	zlp,1,1
+ 696               	.Letext0:
+ 697               		.file 2 "./conf/compiler.h"
+ 698               		.file 3 "c:\\program files (x86)\\arduino\\hardware\\tools\\avr\\avr\\include\\stdint.h"
+ 699               		.file 4 "usb/usb_descriptors.h"
+ 700               		.file 5 "usb/usb_specific_request.h"
+DEFINED SYMBOLS
+                            *ABS*:00000000 usb_standard_request.c
+C:\Users\chris\AppData\Local\Temp\ccBbKAdD.s:2      *ABS*:0000003e __SP_H__
+C:\Users\chris\AppData\Local\Temp\ccBbKAdD.s:3      *ABS*:0000003d __SP_L__
+C:\Users\chris\AppData\Local\Temp\ccBbKAdD.s:4      *ABS*:0000003f __SREG__
+C:\Users\chris\AppData\Local\Temp\ccBbKAdD.s:5      *ABS*:00000000 __tmp_reg__
+C:\Users\chris\AppData\Local\Temp\ccBbKAdD.s:6      *ABS*:00000001 __zero_reg__
+C:\Users\chris\AppData\Local\Temp\ccBbKAdD.s:12     .text:00000000 usb_process_request
+                             .bss:00000000 bmRequestType
+C:\Users\chris\AppData\Local\Temp\ccBbKAdD.s:693    .bss:00000003 zlp
+                            *COM*:00000001 data_to_transfer
+                            *COM*:00000002 pbuffer
+                            *COM*:00000001 usb_configuration_nb
+C:\Users\chris\AppData\Local\Temp\ccBbKAdD.s:688    .bss:00000001 endpoint_status
+                            *COM*:00000001 usb_remote_wup_feature
+                            *COM*:00000002 wInterface
+
+UNDEFINED SYMBOLS
+__tablejump2__
+usb_conf_desc
+usb_dev_desc
+usb_user_get_descriptor
+usb_user_endpoint_init
+usb_user_read_request
+__do_clear_bss

@@ -1,0 +1,245 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Englisch (USA) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ABOUTBOX DIALOGEX 0, 0, 308, 137
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "About eStick Demo"
+FONT 8, "MS Sans Serif", 0, 0, 0x0
+BEGIN
+    ICON            IDR_MAINFRAME,IDC_STATIC,36,95,21,20
+    LTEXT           "based upon Atmel UsbHidDemoCode Version 1.0",IDC_STATIC,
+                    74,94,188,8,SS_NOPREFIX
+    LTEXT           "Copyright (C) 2008",IDC_STATIC,74,106,119,8
+    DEFPUSHBUTTON   "OK",IDOK,251,116,50,14,WS_GROUP
+    CONTROL         "University of Applied Sciences - Technikum Wien --  Institute for Embedded Systems",
+                    IDC_STATIC,"Static",SS_LEFTNOWORDWRAP | SS_NOPREFIX | 
+                    WS_GROUP,23,59,269,12
+    LTEXT           "eStick - Persistence of Vision Gadget (POV) , Version 0.1, April 2008",
+                    IDC_STATIC,23,17,237,8,SS_NOPREFIX
+    LTEXT           "This Demo Application can be used to download Text to the eStick",
+                    IDC_STATIC,22,29,213,8,SS_NOPREFIX
+    LTEXT           "eStick Open Hardware Design by Martin Horauer",
+                    IDC_STATIC,23,47,188,8,SS_NOPREFIX
+    LTEXT           "visit: http://www.technikum-wien.at/studien/bachelorstudien/elektronik/estick",
+                    IDC_STATIC,24,72,251,8,SS_NOPREFIX
+END
+
+IDD_USBHIDDEMOCODE_DIALOG DIALOGEX 0, 0, 318, 189
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | 
+    WS_SYSMENU
+EXSTYLE WS_EX_APPWINDOW
+CAPTION "eStick Usb Text Generator "
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,7,140,20,14,NOT WS_VISIBLE | WS_DISABLED
+    PUSHBUTTON      "Exit",IDCANCEL,246,139,65,14
+    PUSHBUTTON      "Led 1",IDC_LED1,138,24,40,14
+    PUSHBUTTON      "Led 2",IDC_LED2,180,24,39,14
+    PUSHBUTTON      "Led 3",IDC_LED3,221,24,40,14
+    PUSHBUTTON      "Led 4",IDC_LED4,263,24,42,14
+    LTEXT           "Vendor ID",IDC_STATIC_VID,77,167,33,8
+    EDITTEXT        IDC_VID,114,165,40,12,ES_AUTOHSCROLL | ES_READONLY | 
+                    ES_WANTRETURN
+    LTEXT           "Product ID",IDC_STATIC_PID,158,167,35,8
+    EDITTEXT        IDC_PID,196,165,40,13,ES_AUTOHSCROLL | ES_READONLY
+    PUSHBUTTON      "Firm",IDC_FW_UPGRADE,282,162,29,14,NOT WS_VISIBLE | 
+                    WS_DISABLED
+    GROUPBOX        "eStick Status",IDC_STATUS,16,12,83,34
+    LTEXT           "Disconnected",IDC_STATUS_TEXT,34,26,60,8
+    LISTBOX         IDC_LIST,7,58,304,48,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | 
+                    WS_TABSTOP
+    PUSHBUTTON      "OK",IDC_BUTTON_VID_PID,7,157,15,14,NOT WS_VISIBLE | 
+                    WS_DISABLED
+    EDITTEXT        IDC_MSGTEXT,34,118,275,14,ES_UPPERCASE | ES_AUTOHSCROLL
+    PUSHBUTTON      "Send Text and disconnect eStick",IDSENDMSG,33,139,207,
+                    14
+    LTEXT           "Text:",IDC_STATIC,12,121,17,8
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,1
+ PRODUCTVERSION 1,0,0,1
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904B0"
+        BEGIN
+            VALUE "FileDescription", "UsbHidDemoCode MFC Application"
+            VALUE "FileVersion", "1, 0, 0, 1"
+            VALUE "InternalName", "UsbHidDemoCode"
+            VALUE "LegalCopyright", "Copyright (C) 2006"
+            VALUE "OriginalFilename", "UsbHidDemoCode.EXE"
+            VALUE "ProductName", "UsbHidDemoCode Application"
+            VALUE "ProductVersion", "1, 0, 0, 1"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_ABOUTBOX, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 301
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 130
+    END
+
+    IDD_USBHIDDEMOCODE_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 311
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 181
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE 
+BEGIN
+    IDS_ABOUTBOX            "&About UsbHidDemoCode..."
+END
+
+#endif    // Englisch (USA) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Französisch (Frankreich) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_FRA)
+#ifdef _WIN32
+LANGUAGE LANG_FRENCH, SUBLANG_FRENCH
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "#define _AFX_NO_SPLITTER_RESOURCES\r\n"
+    "#define _AFX_NO_OLE_RESOURCES\r\n"
+    "#define _AFX_NO_TRACKER_RESOURCES\r\n"
+    "#define _AFX_NO_PROPERTY_RESOURCES\r\n"
+    "\r\n"
+    "#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)\r\n"
+    "#ifdef _WIN32\r\n"
+    "LANGUAGE 9, 1\r\n"
+    "#pragma code_page(1252)\r\n"
+    "#endif //_WIN32\r\n"
+    "#include ""res\\UsbHidDemoCode.rc2""  // non-Microsoft Visual C++ edited resources\r\n"
+    "#include ""afxres.rc""         // Standard components\r\n"
+    "#endif\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDR_MAINFRAME           ICON                    "res\\UsbHidDemoCode.ico"
+#endif    // Französisch (Frankreich) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+#define _AFX_NO_SPLITTER_RESOURCES
+#define _AFX_NO_OLE_RESOURCES
+#define _AFX_NO_TRACKER_RESOURCES
+#define _AFX_NO_PROPERTY_RESOURCES
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE 9, 1
+#pragma code_page(1252)
+#endif //_WIN32
+#include "res\UsbHidDemoCode.rc2"  // non-Microsoft Visual C++ edited resources
+#include "afxres.rc"         // Standard components
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
